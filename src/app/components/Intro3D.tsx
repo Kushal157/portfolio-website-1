@@ -112,7 +112,7 @@ export function Intro3D({ onComplete }: Intro3DProps) {
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              className="absolute inset-0 border border-white/10 rounded-full"
+              className="absolute inset-0 border border-white/10 rounded-full will-change-transform"
               initial={{ scale: 0, opacity: 0 }}
               animate={{
                 scale: [0, 1.2, 1],
@@ -140,13 +140,13 @@ export function Intro3D({ onComplete }: Intro3DProps) {
               duration: 1.5,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="relative"
+            className="relative will-change-transform"
           >
             <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold shadow-2xl">
               KN
             </div>
             <motion.div
-              className="absolute -inset-4 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-600/30 blur-2xl"
+              className="absolute -inset-4 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-600/30 blur-2xl will-change-transform"
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.3, 0.6, 0.3],

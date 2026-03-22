@@ -512,7 +512,9 @@ export default function App() {
                             <img
                               src={project.imageUrl || project.imageStoragePath}
                               alt={`${project.title} preview`}
-                              className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                              loading="lazy"
+                              decoding="async"
+                              className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105 will-change-transform"
                             />
                             {/* Hover expand overlay */}
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
@@ -670,7 +672,9 @@ export default function App() {
                         <img
                           src={(siteData.projects[previewIndex] as any).imageUrl || (siteData.projects[previewIndex] as any).imageStoragePath}
                           alt={(siteData.projects[previewIndex] as any)?.title}
-                          className="w-full h-auto"
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-auto will-change-transform"
                         />
                       ) : (
                         <div className="flex items-center justify-center h-64 text-gray-500">

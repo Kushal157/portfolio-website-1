@@ -21,8 +21,8 @@ export function CursorFollower() {
     }
 
     const moveCursor = (e: MouseEvent) => {
-      cursorX.set(e.clientX);
-      cursorY.set(e.clientY);
+      cursorX.set(e.clientX - 24); // SVG is 48px wide, offset by -24 to center
+      cursorY.set(e.clientY - 24);
     };
 
     window.addEventListener('mousemove', moveCursor);
@@ -51,12 +51,10 @@ export function CursorFollower() {
 
   return (
     <motion.div
-      className="pointer-events-none fixed z-[9999]"
+      className="pointer-events-none fixed top-0 left-0 z-[9999] will-change-transform"
       style={{
-        left: cursorX,
-        top: cursorY,
-        x: '-50%',
-        y: '-50%',
+        x: cursorX,
+        y: cursorY,
       }}
     >
       {/* Mini Groot Cursor SVG */}

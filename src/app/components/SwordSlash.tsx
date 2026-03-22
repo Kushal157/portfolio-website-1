@@ -36,14 +36,14 @@ export function SwordSlash({ onComplete }: SwordSlashProps) {
 
       {/* Sword slash animation */}
       <motion.div
-        className="absolute inset-0 flex items-center justify-center"
+        className="absolute inset-0 flex items-center justify-center will-change-[opacity]"
         initial={{ opacity: 1 }}
         animate={{ opacity: slashComplete ? 0 : 1 }}
         transition={{ duration: 0.3, delay: slashComplete ? 0.8 : 0 }}
       >
         {/* Demon Sword SVG */}
         <motion.div
-          className="absolute"
+          className="absolute will-change-transform"
           style={{
             filter: 'drop-shadow(0 0 30px rgba(239, 68, 68, 0.9)) drop-shadow(0 0 60px rgba(251, 191, 36, 0.7))',
           }}
@@ -207,7 +207,7 @@ export function SwordSlash({ onComplete }: SwordSlashProps) {
         {[...Array(25)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full"
+            className="absolute rounded-full will-change-transform"
             style={{
               width: Math.random() * 6 + 2,
               height: Math.random() * 6 + 2,
