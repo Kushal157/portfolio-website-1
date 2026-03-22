@@ -123,15 +123,36 @@ export default function App() {
     );
   }
 
+  const preloader = (
+    <div style={{ display: 'none' }} aria-hidden="true">
+      {(siteData.hero?.imageUrl || siteData.hero?.imageStoragePath) && (
+        <img src={siteData.hero.imageUrl || siteData.hero.imageStoragePath} alt="" />
+      )}
+      {(Array.isArray(siteData.projects) ? siteData.projects : []).map((p: any, i: number) => (
+        (p?.imageUrl || p?.imageStoragePath) && <img key={i} src={p.imageUrl || p.imageStoragePath} alt="" />
+      ))}
+    </div>
+  );
+
   if (showSwordSlash) {
-    return <SwordSlash onComplete={() => {
-      setShowSwordSlash(false);
-      setShowIntro(true);
-    }} />;
+    return (
+      <>
+        {preloader}
+        <SwordSlash onComplete={() => {
+          setShowSwordSlash(false);
+          setShowIntro(true);
+        }} />
+      </>
+    );
   }
 
   if (showIntro) {
-    return <Intro3D onComplete={() => setShowIntro(false)} />;
+    return (
+      <>
+        {preloader}
+        <Intro3D onComplete={() => setShowIntro(false)} />
+      </>
+    );
   }
 
   const iconComponents: Record<string, React.ReactNode> = {
