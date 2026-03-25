@@ -1,44 +1,73 @@
 import { motion } from 'motion/react';
 
-export function AnimatedBackground() {
+interface AnimatedBackgroundProps {
+  luxeMode?: 'midnight' | 'aurora';
+}
+
+export function AnimatedBackground({ luxeMode = 'midnight' }: AnimatedBackgroundProps) {
+  const isAurora = luxeMode === 'aurora';
+
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none bg-[#0F172A]">
+    <div className="fixed inset-0 overflow-hidden pointer-events-none transition-colors duration-1000">
       {/* Deep Radial Gradient Background */}
-      <div 
+      <motion.div 
         className="absolute inset-0"
-        style={{
-          background: 'radial-gradient(circle at 50% 50%, #1E293B 0%, #0F172A 100%)',
+        initial={false}
+        animate={{
+          background: isAurora
+            ? 'radial-gradient(circle at 50% 50%, #1E1B4B 0%, #0F172A 100%)'
+            : 'radial-gradient(circle at 50% 50%, #1E293B 0%, #0F172A 100%)'
         }}
+        transition={{ duration: 1.5 }}
       />
 
       {/* Subtle accent glow orbs */}
       <motion.div
         className="absolute w-[800px] h-[800px] rounded-full opacity-20 blur-[120px]"
-        style={{
-          background: 'radial-gradient(circle, #3B82F6 0%, transparent 70%)',
-          top: '-10%', left: '-10%',
+        initial={false}
+        animate={{
+          background: isAurora
+            ? 'radial-gradient(circle, #06B6D4 0%, transparent 70%)'
+            : 'radial-gradient(circle, #3B82F6 0%, transparent 70%)',
+          top: isAurora ? '0%' : '-10%',
+          left: isAurora ? '50%' : '-10%',
+          translateX: isAurora ? '-50%' : '0%',
         }}
-        animate={{ 
-          x: [0, 50, 0], 
-          y: [0, 30, 0],
-          scale: [1, 1.1, 1] 
-        }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-      />
+        transition={{ duration: 2, ease: "easeInOut" }}
+      >
+        <motion.div
+          className="w-full h-full"
+          animate={{ 
+            x: [0, 50, 0], 
+            y: [0, 30, 0],
+            scale: [1, 1.1, 1] 
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      </motion.div>
       
       <motion.div
         className="absolute w-[600px] h-[600px] rounded-full opacity-15 blur-[100px]"
-        style={{
-          background: 'radial-gradient(circle, #9333EA 0%, transparent 70%)',
-          bottom: '10%', right: '-5%',
+        initial={false}
+        animate={{
+          background: isAurora
+            ? 'radial-gradient(circle, #F43F5E 0%, transparent 70%)'
+            : 'radial-gradient(circle, #9333EA 0%, transparent 70%)',
+          bottom: isAurora ? '20%' : '10%',
+          right: isAurora ? '10%' : '-5%',
         }}
-        animate={{ 
-          x: [0, -40, 0], 
-          y: [0, -60, 0],
-          scale: [1, 1.2, 1] 
-        }}
-        transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-      />
+        transition={{ duration: 2, ease: "easeInOut" }}
+      >
+        <motion.div
+          className="w-full h-full"
+          animate={{ 
+            x: [0, -40, 0], 
+            y: [0, -60, 0],
+            scale: [1, 1.2, 1] 
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      </motion.div>
 
       {/* Subtle grid for tech feel */}
       <svg className="absolute inset-0 w-full h-full opacity-[0.03]">

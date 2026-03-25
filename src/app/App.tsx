@@ -11,13 +11,14 @@ import { MagneticButton } from './components/MagneticButton';
 import { LinkedInOcto, GitHubOcto, ProjectsOcto, AboutOcto, ContactOcto } from './components/DockIcons';
 import { AdminDashboard } from './components/AdminDashboard';
 import { WaterFrame } from './components/WaterFrame';
-import { Code, Sparkles, Rocket, ArrowRight, Mail, Linkedin, Github, Eye, X as XIcon, ExternalLink, Globe, ShieldCheck } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Code, Sparkles, Rocket, ArrowRight, Mail, Linkedin, Github, Eye, X as XIcon, ExternalLink, Globe, ShieldCheck, Sun, Moon } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
 const SERVER_URL = `https://${projectId}.supabase.co/functions/v1/make-server-a70c1202`;
 
 type Section = 'home' | 'about' | 'projects' | 'contact' | 'admin';
+type LuxeMode = 'midnight' | 'aurora';
 
 
 // Error Boundary to prevent lottie-react crashes from taking down the whole app
@@ -57,6 +58,7 @@ function LottieDockIcon({ signedUrl, localData }: { signedUrl?: string; localDat
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<Section>('home');
+  const [luxeMode, setLuxeMode] = useState<LuxeMode>('midnight');
   const [showSwordSlash, setShowSwordSlash] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -214,6 +216,11 @@ export default function App() {
     AboutOcto: <AboutOcto />,
     ContactOcto: <ContactOcto />,
     AdminOcto: <ShieldCheck className="w-6 h-6 text-blue-400" />,
+    ModeOcto: luxeMode === 'midnight' ? <Moon className="w-6 h-6 text-blue-400" /> : <Sun className="w-6 h-6 text-amber-400" />,
+  };
+
+  const toggleLuxeMode = () => {
+    setLuxeMode(prev => prev === 'midnight' ? 'aurora' : 'midnight');
   };
 
   const dockItems = [
@@ -233,6 +240,13 @@ export default function App() {
         }
       },
     })),
+    // Luxe Mode Toggle
+    { 
+      id: 'mode', 
+      icon: iconComponents.ModeOcto, 
+      label: luxeMode === 'midnight' ? 'Midnight' : 'Aurora', 
+      onClick: toggleLuxeMode 
+    },
   ];
 
   return (
@@ -242,7 +256,7 @@ export default function App() {
       <GrainOverlay />
       
       {/* Animated Background */}
-      <AnimatedBackground />
+      <AnimatedBackground luxeMode={luxeMode} />
 
       {/* Logo */}
 
