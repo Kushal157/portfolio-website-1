@@ -245,15 +245,6 @@ export default function App() {
       <AnimatedBackground />
 
       {/* Logo */}
-      <div className="fixed top-8 left-8 z-50">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="text-2xl font-bold tracking-tighter text-slate-50"
-        >
-          PORTFOLIO
-        </motion.div>
-      </div>
 
       {/* Main Content */}
       <div className="relative z-10">
@@ -265,16 +256,7 @@ export default function App() {
                 
                 <div className="max-w-6xl w-full relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
                   <div className="flex-1 md:max-w-2xl">
-                    <motion.div
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.8, delay: 0.2 }}
-                      className="mb-8"
-                    >
-                      <span className="text-blue-400 text-sm md:text-base tracking-widest uppercase font-medium">
-                        {siteData.hero.welcome?.replace(/PORTFOLIOSS/i, 'PORTFOLIO')}
-                      </span>
-                    </motion.div>
+
 
                     <motion.h1
                       initial={{ opacity: 0, y: 30 }}
