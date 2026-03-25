@@ -111,7 +111,6 @@ export default function App() {
       { id: 'projects', type: 'ProjectsOcto', label: 'Projects', url: '', action: 'projects' },
       { id: 'about', type: 'AboutOcto', label: 'About Me', url: '', action: 'about' },
       { id: 'contact', type: 'ContactOcto', label: 'Contact', url: '', action: 'contact' },
-      { id: 'admin', type: 'AdminOcto', label: 'Admin', url: '', action: 'admin' },
     ],
     about: {
       paragraph1: "I'm a passionate creative developer dedicated to crafting exceptional digital experiences that seamlessly blend form and function.",
@@ -158,13 +157,7 @@ export default function App() {
               ...res.data,
               hero: { ...prev.hero, ...(res.data.hero || {}), imageUrl: heroSignedUrl || res.data.hero?.imageUrl || prev.hero.imageUrl },
               projects: cleanProjects,
-              dockIcons: (() => {
-                const fetched = Array.isArray(res.data.dockIcons) ? res.data.dockIcons : prev.dockIcons;
-                if (!fetched.find((icon: any) => icon.id === 'admin')) {
-                  return [...fetched, { id: 'admin', type: 'AdminOcto', label: 'Admin', url: '', action: 'admin' }];
-                }
-                return fetched;
-              })(),
+              dockIcons: Array.isArray(res.data.dockIcons) ? res.data.dockIcons : prev.dockIcons,
             };
           });
         }
