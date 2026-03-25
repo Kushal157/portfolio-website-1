@@ -58,7 +58,10 @@ function LottieDockIcon({ signedUrl, localData }: { signedUrl?: string; localDat
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<Section>('home');
-  const [luxeMode, setLuxeMode] = useState<LuxeMode>('midnight');
+  const [luxeMode, setLuxeMode] = useState<LuxeMode>(() => {
+    const hour = new Date().getHours();
+    return hour >= 15 ? 'midnight' : 'aurora';
+  });
   const [showSwordSlash, setShowSwordSlash] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -240,13 +243,6 @@ export default function App() {
         }
       },
     })),
-    // Luxe Mode Toggle
-    { 
-      id: 'mode', 
-      icon: iconComponents.ModeOcto, 
-      label: luxeMode === 'midnight' ? 'Midnight' : 'Aurora', 
-      onClick: toggleLuxeMode 
-    },
   ];
 
   return (
