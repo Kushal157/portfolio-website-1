@@ -5,9 +5,23 @@ interface MagneticButtonProps {
   children: ReactNode;
   className?: string;
   onClick?: () => void;
+  variant?: 'primary' | 'ghost' | 'none';
 }
 
-export function MagneticButton({ children, className = '', onClick }: MagneticButtonProps) {
+export function MagneticButton({ 
+  children, 
+  className = '', 
+  onClick,
+  variant = 'none'
+}: MagneticButtonProps) {
+  const variantStyles = {
+    primary: 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-medium flex items-center gap-2 transition-all shadow-lg shadow-blue-500/25',
+    ghost: 'bg-white/5 hover:bg-white/10 text-white border border-white/10 px-8 py-4 rounded-full font-medium transition-all backdrop-blur-sm',
+    none: ''
+  };
+
+  const combinedClassName = `${variantStyles[variant]} ${className}`.trim();
+
   const ref = useRef<HTMLButtonElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -36,7 +50,7 @@ export function MagneticButton({ children, className = '', onClick }: MagneticBu
   return (
     <motion.button
       ref={ref}
-      className={className}
+      className={combinedClassName}
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}

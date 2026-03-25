@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import Lottie from 'lottie-react';
 import { Dock } from './components/Dock';
 import { Intro3D } from './components/Intro3D';
 import { SwordSlash } from './components/SwordSlash';
 import { ScrollSection, ParallaxSection, RotateSection } from './components/ScrollSection';
 import { PageTransition } from './components/PageTransition';
-import { CursorFollower } from './components/CursorFollower';
 import { GrainOverlay } from './components/GrainOverlay';
 import { AnimatedBackground } from './components/AnimatedBackground';
 import { MagneticButton } from './components/MagneticButton';
 import { LinkedInOcto, GitHubOcto, ProjectsOcto, AboutOcto, ContactOcto } from './components/DockIcons';
 import { AdminDashboard } from './components/AdminDashboard';
 import { WaterFrame } from './components/WaterFrame';
-import { Code, Sparkles, Rocket, ArrowRight, Mail, Linkedin, Github, Eye, X as XIcon, ExternalLink } from 'lucide-react';
+import { Code, Sparkles, Rocket, ArrowRight, Mail, Linkedin, Github, Eye, X as XIcon, ExternalLink, Globe, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
@@ -19,10 +19,46 @@ const SERVER_URL = `https://${projectId}.supabase.co/functions/v1/make-server-a7
 
 type Section = 'home' | 'about' | 'projects' | 'contact' | 'admin';
 
+
+// Error Boundary to prevent lottie-react crashes from taking down the whole app
+class LottieErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+  constructor(props: any) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return <div className="w-10 h-10 rounded-full bg-white/10" />;
+    return this.props.children;
+  }
+}
+
+// Fetches a Lottie JSON from a signed URL or uses local data
+function LottieDockIcon({ signedUrl, localData }: { signedUrl?: string; localData?: any }) {
+  const [animData, setAnimData] = useState<any>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (localData) { setAnimData(localData); return; }
+    if (!signedUrl) { setFailed(true); return; }
+    fetch(signedUrl)
+      .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.json(); })
+      .then(data => { if (data && typeof data === 'object') setAnimData(data); else setFailed(true); })
+      .catch(() => setFailed(true));
+  }, [signedUrl, localData]);
+
+  if (failed) return <div className="w-10 h-10 rounded-full bg-white/10" />;
+  if (!animData) return <div className="w-10 h-10 rounded-full bg-white/10 animate-pulse" />;
+  return (
+    <LottieErrorBoundary>
+      <div className="w-10 h-10 flex items-center justify-center">
+        <Lottie animationData={animData} loop autoplay style={{ width: '100%', height: '100%' }} />
+      </div>
+    </LottieErrorBoundary>
+  );
+}
+
 export default function App() {
   const [activeSection, setActiveSection] = useState<Section>('home');
-  const [showSwordSlash, setShowSwordSlash] = useState(true);
-  const [showIntro, setShowIntro] = useState(false);
+  const [showSwordSlash, setShowSwordSlash] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
@@ -75,7 +111,24 @@ export default function App() {
       { id: 'projects', type: 'ProjectsOcto', label: 'Projects', url: '', action: 'projects' },
       { id: 'about', type: 'AboutOcto', label: 'About Me', url: '', action: 'about' },
       { id: 'contact', type: 'ContactOcto', label: 'Contact', url: '', action: 'contact' },
-    ]
+      { id: 'admin', type: 'AdminOcto', label: 'Admin', url: '', action: 'admin' },
+    ],
+    about: {
+      paragraph1: "I'm a passionate creative developer dedicated to crafting exceptional digital experiences that seamlessly blend form and function.",
+      paragraph2: "With years of experience in web development and design, I specialize in creating immersive, user-centric interfaces using cutting-edge technologies.",
+      paragraph3: "My approach combines technical expertise with creative vision, ensuring every project not only meets but exceeds expectations.",
+      skills: 'React, TypeScript, Next.js, Node.js, Tailwind CSS, Motion, Three.js, GraphQL, PostgreSQL, AWS, Docker, Figma',
+    },
+    cta: {
+      heading: "Let's Create Something",
+      highlight: 'Extraordinary',
+      subtext: "Ready to bring your vision to life? Let's collaborate and build something amazing together.",
+    },
+    contacts: [
+      { id: 'email', platform: 'Email', value: 'hello@kushaln.com', url: 'mailto:hello@kushaln.com', iconType: 'Mail' },
+      { id: 'linkedin', platform: 'LinkedIn', value: '/in/kushaln', url: 'https://linkedin.com/in/kushaln', iconType: 'Linkedin' },
+      { id: 'github', platform: 'GitHub', value: '@kushaln', url: 'https://github.com/kushaln', iconType: 'Github' },
+    ],
   });
 
   useEffect(() => {
@@ -105,7 +158,13 @@ export default function App() {
               ...res.data,
               hero: { ...prev.hero, ...(res.data.hero || {}), imageUrl: heroSignedUrl || res.data.hero?.imageUrl || prev.hero.imageUrl },
               projects: cleanProjects,
-              dockIcons: Array.isArray(res.data.dockIcons) ? res.data.dockIcons : prev.dockIcons,
+              dockIcons: (() => {
+                const fetched = Array.isArray(res.data.dockIcons) ? res.data.dockIcons : prev.dockIcons;
+                if (!fetched.find((icon: any) => icon.id === 'admin')) {
+                  return [...fetched, { id: 'admin', type: 'AdminOcto', label: 'Admin', url: '', action: 'admin' }];
+                }
+                return fetched;
+              })(),
             };
           });
         }
@@ -116,7 +175,7 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex flex-col items-center justify-center text-white">
+      <div className="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center text-white">
         <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-gray-400">Loading experience...</p>
       </div>
@@ -161,13 +220,16 @@ export default function App() {
     ProjectsOcto: <ProjectsOcto />,
     AboutOcto: <AboutOcto />,
     ContactOcto: <ContactOcto />,
+    AdminOcto: <ShieldCheck className="w-6 h-6 text-blue-400" />,
   };
 
   const dockItems = [
     ...(Array.isArray(siteData.dockIcons) ? siteData.dockIcons : []).map((icon: any) => ({
       id: icon?.id || Math.random().toString(),
-      icon: icon?.type === 'CustomImage' && (icon?.customIconData || icon?.storagePath)
-        ? <div className="w-10 h-10 flex items-center justify-center"><img src={icon.customIconData || icon.storagePath} alt={icon.label || 'Custom'} className="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" /></div>
+      icon: icon?.type === 'CustomImage' && (icon?.customIconData || icon?.storagePath || icon?.lottieData)
+        ? (icon?.isLottie || icon?.lottieData)
+          ? <LottieDockIcon signedUrl={icon.isLottie ? icon.customIconData : undefined} localData={icon.lottieData} />
+          : <div className="w-10 h-10 flex items-center justify-center"><img src={icon.customIconData || icon.storagePath} alt={icon.label || 'Custom'} className="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" /></div>
         : (icon?.type && iconComponents[icon.type]) ? iconComponents[icon.type] : <ProjectsOcto />,
       label: icon?.label || '',
       onClick: () => {
@@ -181,15 +243,24 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] overflow-x-hidden">
-      {/* Cursor Follower */}
-      <CursorFollower />
-      
+    <div className="min-h-screen bg-[#0F172A] overflow-x-hidden">
+
       {/* Grain Texture */}
       <GrainOverlay />
       
       {/* Animated Background */}
       <AnimatedBackground />
+
+      {/* Logo */}
+      <div className="fixed top-8 left-8 z-50">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="text-2xl font-bold tracking-tighter text-slate-50"
+        >
+          PORTFOLIO
+        </motion.div>
+      </div>
 
       {/* Main Content */}
       <div className="relative z-10">
@@ -208,7 +279,7 @@ export default function App() {
                       className="mb-8"
                     >
                       <span className="text-blue-400 text-sm md:text-base tracking-widest uppercase font-medium">
-                        {siteData.hero.welcome}
+                        {siteData.hero.welcome?.replace(/PORTFOLIOSS/i, 'PORTFOLIO')}
                       </span>
                     </motion.div>
 
@@ -216,7 +287,7 @@ export default function App() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.8, delay: 0.4 }}
-                      className="text-6xl md:text-8xl lg:text-9xl font-bold text-white mb-6 tracking-tight leading-none"
+                      className="text-6xl md:text-8xl lg:text-9xl font-bold text-slate-50 mb-6 tracking-tight leading-none"
                     >
                       {siteData.hero.name}
                     </motion.h1>
@@ -225,7 +296,7 @@ export default function App() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.8, delay: 0.6 }}
-                      className="text-2xl md:text-4xl lg:text-5xl text-gray-400 mb-8 font-light"
+                      className="text-2xl md:text-4xl lg:text-5xl text-slate-300 mb-8 font-light"
                     >
                       {siteData.hero.subtitle}
                     </motion.h2>
@@ -234,7 +305,7 @@ export default function App() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.8, delay: 0.8 }}
-                      className="text-lg md:text-xl text-gray-500 max-w-2xl mb-12 leading-relaxed"
+                      className="text-lg md:text-xl text-slate-300 max-w-2xl mb-12 leading-relaxed"
                     >
                       {siteData.hero.description}
                     </motion.p>
@@ -245,16 +316,16 @@ export default function App() {
                       transition={{ duration: 0.8, delay: 1 }}
                       className="flex flex-wrap gap-4"
                     >
-                      <MagneticButton
+                      <MagneticButton 
+                        variant="primary"
                         onClick={() => setActiveSection('projects')}
-                        className="group px-8 py-4 bg-white text-black rounded-full font-semibold flex items-center gap-2 hover:gap-4 transition-all"
                       >
                         View My Work
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="w-5 h-5" />
                       </MagneticButton>
-                      <MagneticButton
+                      <MagneticButton 
+                        variant="ghost"
                         onClick={() => setActiveSection('contact')}
-                        className="px-8 py-4 bg-transparent border-2 border-white/20 text-white rounded-full font-semibold hover:border-white/40 transition-all"
                       >
                         Get in Touch
                       </MagneticButton>
@@ -269,20 +340,6 @@ export default function App() {
                 </div>
               </section>
 
-              {/* Scroll Indicator */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.5 }}
-                className="fixed bottom-32 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 text-gray-600"
-              >
-                <span className="text-xs uppercase tracking-widest">Scroll</span>
-                <motion.div
-                  animate={{ y: [0, 10, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                  className="w-px h-12 bg-gradient-to-b from-gray-600 to-transparent"
-                />
-              </motion.div>
 
               {/* Feature Sections */}
               <section className="container mx-auto px-6 py-32">
@@ -318,8 +375,8 @@ export default function App() {
                         <div className="text-blue-400 mb-6 group-hover:scale-110 transition-transform duration-500">
                           {feature.icon}
                         </div>
-                        <h3 className="text-2xl font-bold text-white mb-3">{feature.title}</h3>
-                        <p className="text-gray-500 leading-relaxed">{feature.desc}</p>
+                        <h3 className="text-2xl font-bold text-slate-50 mb-3">{feature.title}</h3>
+                        <p className="text-slate-300 leading-relaxed">{feature.desc}</p>
                         
                         {/* Hover effect */}
                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/0 to-purple-500/0 group-hover:from-blue-500/5 group-hover:to-purple-500/5 transition-all duration-500 pointer-events-none" />
@@ -338,34 +395,20 @@ export default function App() {
                       whileInView={{ opacity: 1, scale: 1 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.8 }}
-                      className="relative p-12 md:p-16 rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.03] to-white/[0.01] overflow-hidden"
+                      className="relative p-12 md:p-16 rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur-xl overflow-hidden shadow-2xl"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 opacity-50" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-purple-500/10 opacity-60" />
                       <div className="relative z-10">
-                        <h2 className="text-4xl md:text-6xl font-bold text-white mb-6">
-                          Let's Create Something
+                        <h2 className="text-4xl md:text-6xl font-bold text-slate-50 mb-6">
+                          {siteData.cta?.heading || "Let's Create Something"}
                           <br />
-                          <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                            Extraordinary
+                          <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                            {siteData.cta?.highlight || 'Extraordinary'}
                           </span>
                         </h2>
-                        <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
-                          Ready to bring your vision to life? Let's collaborate and build something amazing together.
+                        <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">
+                          {siteData.cta?.subtext || "Ready to bring your vision to life? Let's collaborate and build something amazing together."}
                         </p>
-                        <div className="flex flex-wrap justify-center gap-4">
-                          <MagneticButton
-                            onClick={() => setActiveSection('projects')}
-                            className="px-10 py-5 bg-white text-black rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-white/20 transition-all"
-                          >
-                            Explore Projects
-                          </MagneticButton>
-                          <MagneticButton
-                            onClick={() => setActiveSection('about')}
-                            className="px-10 py-5 bg-transparent border-2 border-white/30 text-white rounded-full font-semibold text-lg hover:border-white/60 transition-all"
-                          >
-                            Learn More
-                          </MagneticButton>
-                        </div>
                       </div>
                     </motion.div>
                   </div>
@@ -389,19 +432,13 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8 }}
                 >
-                  <h2 className="text-5xl md:text-7xl font-bold text-white mb-8">About Me</h2>
+                  <h2 className="text-5xl md:text-7xl font-bold text-slate-50 mb-8">About Me</h2>
                   
                   <div className="grid md:grid-cols-2 gap-12 mb-16">
-                    <div className="space-y-6 text-gray-400 text-lg leading-relaxed">
-                      <p>
-                        I'm a passionate creative developer dedicated to crafting exceptional digital experiences that seamlessly blend form and function.
-                      </p>
-                      <p>
-                        With years of experience in web development and design, I specialize in creating immersive, user-centric interfaces using cutting-edge technologies.
-                      </p>
-                      <p>
-                        My approach combines technical expertise with creative vision, ensuring every project not only meets but exceeds expectations.
-                      </p>
+                    <div className="space-y-6 text-slate-300 text-lg leading-relaxed font-light">
+                      <p>{siteData.about?.paragraph1 || "I'm a passionate creative developer dedicated to crafting exceptional digital experiences."}</p>
+                      <p>{siteData.about?.paragraph2 || 'With years of experience in web development and design, I specialize in creating immersive, user-centric interfaces.'}</p>
+                      <p>{siteData.about?.paragraph3 || 'My approach combines technical expertise with creative vision, ensuring every project exceeds expectations.'}</p>
                     </div>
 
                     <div className="space-y-8">
@@ -416,15 +453,15 @@ export default function App() {
                           ].map((item) => (
                             <div key={item.skill}>
                               <div className="flex justify-between text-sm mb-2">
-                                <span className="text-gray-400">{item.skill}</span>
-                                <span className="text-blue-400">{item.level}%</span>
+                                <span className="text-slate-400 font-medium">{item.skill}</span>
+                                <span className="text-blue-400 font-bold">{item.level}%</span>
                               </div>
                               <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                                 <motion.div
                                   initial={{ width: 0 }}
                                   whileInView={{ width: `${item.level}%` }}
                                   viewport={{ once: true }}
-                                  transition={{ duration: 1, delay: 0.2 }}
+                                  transition={{ duration: 1.5, delay: 0.2, ease: "circOut" }}
                                   className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
                                 />
                               </div>
@@ -438,7 +475,7 @@ export default function App() {
                   <div>
                     <h3 className="text-2xl font-semibold text-white mb-6 uppercase tracking-wider">Tech Stack</h3>
                     <div className="flex flex-wrap gap-3">
-                      {['React', 'TypeScript', 'Next.js', 'Node.js', 'Tailwind CSS', 'Motion', 'Three.js', 'GraphQL', 'PostgreSQL', 'AWS', 'Docker', 'Figma'].map((skill) => (
+                      {(siteData.about?.skills || 'React, TypeScript, Next.js, Node.js, Tailwind CSS, Motion, Three.js, GraphQL, PostgreSQL, AWS, Docker, Figma').split(',').map((skill) => skill.trim()).filter(Boolean).map((skill) => (
                         <motion.span
                           key={skill}
                           initial={{ opacity: 0, scale: 0.8 }}
@@ -486,7 +523,7 @@ export default function App() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8 }}
-                  className="text-5xl md:text-7xl font-bold text-white mb-16"
+                  className="text-5xl md:text-7xl font-bold text-slate-50 mb-16"
                 >
                   Selected Works
                 </motion.h2>
@@ -500,7 +537,7 @@ export default function App() {
                       viewport={{ once: true }}
                       transition={{ duration: 0.6, delay: index * 0.1 }}
                       whileHover={{ y: -10 }}
-                      className="group relative rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-500 cursor-pointer overflow-hidden"
+                      className="group relative rounded-2xl border border-white/8 bg-white/5 hover:bg-white/8 hover:border-white/15 backdrop-blur-sm transition-all duration-500 cursor-pointer overflow-hidden shadow-sm"
                     >
                       {/* Mini Preview Window */}
                       {(project?.imageUrl || project?.imageStoragePath) && (
@@ -561,15 +598,15 @@ export default function App() {
                               <span className="w-3 h-3 rounded-full bg-[#28c840]/40" />
                             </div>
                             <div className="flex-1 flex justify-center">
-                              <span className="text-[11px] text-gray-600 font-mono">preview</span>
+                              <span className="text-[11px] text-slate-300 font-mono">preview</span>
                             </div>
                           </div>
                           <div className="w-full aspect-[16/9] bg-gradient-to-br from-white/[0.02] to-white/[0.005] flex items-center justify-center">
                             <div className="text-center">
                               <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-white/5 flex items-center justify-center">
-                                <Code className="w-6 h-6 text-gray-600" />
+                                <Code className="w-6 h-6 text-slate-300" />
                               </div>
-                              <p className="text-gray-600 text-xs">No preview uploaded</p>
+                              <p className="text-slate-300 text-xs">No preview uploaded</p>
                             </div>
                           </div>
                         </div>
@@ -578,7 +615,7 @@ export default function App() {
                       {/* Project Info */}
                       <div className="p-8 relative z-10">
                         {/* Year badge */}
-                        <div className="absolute top-8 right-8 text-xs text-gray-600 font-mono">
+                        <div className="absolute top-8 right-8 text-xs text-slate-300 font-mono">
                           {project?.year}
                         </div>
 
@@ -733,29 +770,41 @@ export default function App() {
                   </p>
 
                   <div className="grid md:grid-cols-3 gap-8 mb-16">
-                    {[
-                      { label: 'Email', value: 'hello@kushaln.com', icon: <Mail className="w-6 h-6" /> },
-                      { label: 'LinkedIn', value: '/in/kushaln', icon: <Linkedin className="w-6 h-6" /> },
-                      { label: 'GitHub', value: '@kushaln', icon: <Github className="w-6 h-6" /> },
-                    ].map((item, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 + i * 0.1 }}
-                        className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition-all cursor-pointer group"
-                      >
-                        <div className="text-blue-400 mb-3 flex justify-center group-hover:scale-110 transition-transform">
-                          {item.icon}
-                        </div>
-                        <div className="text-gray-600 text-sm mb-1">{item.label}</div>
-                        <div className="text-white font-medium">{item.value}</div>
-                      </motion.div>
-                    ))}
+                    {(Array.isArray(siteData.contacts) ? siteData.contacts : []).map((item: any, i: number) => {
+                      const IconComponent = {
+                        Mail: Mail,
+                        Linkedin: Linkedin,
+                        Github: Github,
+                        Globe: Globe,
+                        Rocket: Rocket
+                      }[item.iconType as string] || Mail;
+
+                      return (
+                        <motion.div
+                          key={item.id || i}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 + i * 0.1 }}
+                          onClick={() => {
+                            if (item.url) window.open(item.url.startsWith('mailto:') ? item.url : (item.url.startsWith('http') ? item.url : `https://${item.url}`), '_blank');
+                          }}
+                          className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition-all cursor-pointer group"
+                        >
+                          <div className="text-blue-400 mb-3 flex justify-center group-hover:scale-110 transition-transform">
+                            <IconComponent className="w-6 h-6" />
+                          </div>
+                          <div className="text-slate-300 text-sm mb-1">{item.platform}</div>
+                          <div className="text-white font-medium truncate px-2">{item.value}</div>
+                        </motion.div>
+                      );
+                    })}
                   </div>
 
                   <MagneticButton
-                    onClick={() => window.location.href = 'mailto:hello@kushaln.com'}
+                    onClick={() => {
+                      const emailContact = (siteData.contacts || []).find((c: any) => c.id === 'email');
+                      window.location.href = emailContact?.url || 'mailto:hello@kushaln.com';
+                    }}
                     className="px-12 py-5 bg-white text-black rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-white/20 transition-all inline-flex items-center gap-3"
                   >
                     Send Message
@@ -782,3 +831,4 @@ export default function App() {
     </div>
   );
 }
+

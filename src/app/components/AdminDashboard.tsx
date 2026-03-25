@@ -154,6 +154,12 @@ export function AdminDashboard({
     }
   };
 
+  const updateDockIconField = (index: number, field: string, value: string) => {
+    const newDockIcons = [...(formData.dockIcons || [])];
+    newDockIcons[index] = { ...newDockIcons[index], [field]: value };
+    setFormData({ ...formData, dockIcons: newDockIcons });
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     setSaveSuccess(false);
@@ -161,15 +167,12 @@ export function AdminDashboard({
       // Deep clone for saving
       const dataToSave = JSON.parse(JSON.stringify(formData));
 
-      // Strip large base64 data - only keep storagePath references
+      // Strip lottieData only (too large, lives in local state). Keep customIconData for persistence.
       if (Array.isArray(dataToSave.dockIcons)) {
         dataToSave.dockIcons = dataToSave.dockIcons.map(
           (icon: any) => {
-            if (icon.storagePath) {
-              const { customIconData, ...rest } = icon;
-              return rest;
-            }
-            return icon;
+            const { lottieData, ...iconWithoutLottie } = icon;
+            return iconWithoutLottie;
           },
         );
       }
@@ -306,6 +309,39 @@ export function AdminDashboard({
         ...prev,
         hero: { ...prev.hero, [key]: value },
       }));
+    },
+    [],
+  );
+
+  const updateAboutField = useCallback(
+    (key: string, value: string) => {
+      setFormData((prev: any) => ({
+        ...prev,
+        about: { ...(prev.about || {}), [key]: value },
+      }));
+    },
+    [],
+  );
+
+  const updateCTAField = useCallback(
+    (key: string, value: string) => {
+      setFormData((prev: any) => ({
+        ...prev,
+        cta: { ...(prev.cta || {}), [key]: value },
+      }));
+    },
+    [],
+  );
+
+  const updateContactField = useCallback(
+    (index: number, field: string, value: any) => {
+      setFormData((prev: any) => {
+        const newContacts = (prev.contacts || []).map(
+          (c: any, i: number) =>
+            i === index ? { ...c, [field]: value } : c,
+        );
+        return { ...prev, contacts: newContacts };
+      });
     },
     [],
   );
@@ -500,9 +536,61 @@ export function AdminDashboard({
       "image/png",
       "image/jpeg",
       "image/svg+xml",
+      "image/gif",
+      "application/json",
     ];
     if (!allowedTypes.includes(file.type)) {
-      alert("Only PNG, JPEG, and SVG files are allowed.");
+      alert("Only PNG, JPEG, SVG, GIF, and JSON (Lottie) files are allowed.");
+      return;
+    }
+
+    // Handle JSON (Lottie) — upload to storage for persistence
+    if (file.type === "application/json") {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const text = event.target?.result as string;
+        try {
+          const json = JSON.parse(text); // validate it's proper JSON
+          // Upload to storage as base64-encoded text
+          const base64 = `data:application/json;base64,${btoa(unescape(encodeURIComponent(text)))}`;
+          const uploadRes = await fetch(`${SERVER_URL}/upload`, {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({
+              fileData: base64,
+              fileName: file.name,
+              contentType: "application/json",
+            }),
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData.path) {
+            setFormData((prev: any) => {
+              const newIcons = prev.dockIcons.map(
+                (icon: any, i: number) =>
+                  i === index
+                    ? { ...icon, type: "CustomImage", lottieData: json, storagePath: uploadData.path, isLottie: true, customIconData: null }
+                    : icon,
+              );
+              return { ...prev, dockIcons: newIcons };
+            });
+          } else {
+            // Fallback: store in local state only
+            setFormData((prev: any) => {
+              const newIcons = prev.dockIcons.map(
+                (icon: any, i: number) =>
+                  i === index
+                    ? { ...icon, type: "CustomImage", lottieData: json, isLottie: true, customIconData: null, storagePath: null }
+                    : icon,
+              );
+              return { ...prev, dockIcons: newIcons };
+            });
+            alert("Could not upload Lottie to storage — animation will only work this session.");
+          }
+        } catch {
+          alert("Invalid JSON / Lottie file.");
+        }
+      };
+      reader.readAsText(file);
       return;
     }
 
@@ -610,7 +698,7 @@ export function AdminDashboard({
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-8 rounded-2xl border border-white/10 bg-[#0a0a0f] relative overflow-hidden">
+    <div className="max-w-5xl mx-auto p-8 rounded-2xl border border-white/10 bg-[#0F172A] relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
 
       <div className="flex justify-between items-center mb-8">
@@ -710,6 +798,190 @@ export function AdminDashboard({
                 <p className="text-xs text-green-400">✓ Image uploaded securely</p>
               )}
             </div>
+          </div>
+        </section>
+
+        {/* About Me Section */}
+        <section className="space-y-6">
+          <h3 className="text-xl font-semibold text-white border-b border-white/10 pb-2">
+            About Me Section
+          </h3>
+          <div className="grid grid-cols-1 gap-6">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+                Paragraph 1
+              </label>
+              <textarea
+                value={formData.about?.paragraph1 || ""}
+                onChange={(e) => updateAboutField("paragraph1", e.target.value)}
+                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors h-24 resize-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+                Paragraph 2
+              </label>
+              <textarea
+                value={formData.about?.paragraph2 || ""}
+                onChange={(e) => updateAboutField("paragraph2", e.target.value)}
+                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors h-24 resize-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+                Paragraph 3
+              </label>
+              <textarea
+                value={formData.about?.paragraph3 || ""}
+                onChange={(e) => updateAboutField("paragraph3", e.target.value)}
+                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors h-24 resize-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+                Skills (Comma Separated)
+              </label>
+              <input
+                type="text"
+                value={formData.about?.skills || ""}
+                onChange={(e) => updateAboutField("skills", e.target.value)}
+                placeholder="React, TypeScript, Next.js..."
+                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Call to Action Section */}
+        <section className="space-y-6">
+          <h3 className="text-xl font-semibold text-white border-b border-white/10 pb-2">
+            "Let's Work Together" Section
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+                Main Heading
+              </label>
+              <input
+                type="text"
+                value={formData.cta?.heading || ""}
+                onChange={(e) => updateCTAField("heading", e.target.value)}
+                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+                Highlight Word
+              </label>
+              <input
+                type="text"
+                value={formData.cta?.highlight || ""}
+                onChange={(e) => updateCTAField("highlight", e.target.value)}
+                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+              Subtext
+            </label>
+            <textarea
+              value={formData.cta?.subtext || ""}
+              onChange={(e) => updateCTAField("subtext", e.target.value)}
+              className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors h-24 resize-none"
+            />
+          </div>
+        </section>
+
+        {/* Contacts Section */}
+        <section className="space-y-6">
+          <h3 className="text-xl font-semibold text-white border-b border-white/10 pb-2">
+            Contact Cards
+          </h3>
+          <div className="grid grid-cols-1 gap-6">
+            {(formData.contacts || []).map((contact: any, index: number) => (
+              <div
+                key={`contact-${index}`}
+                className="p-6 rounded-xl border border-white/5 bg-white/[0.02] relative group"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      Platform Name
+                    </label>
+                    <input
+                      type="text"
+                      value={contact.platform || ""}
+                      onChange={(e) => updateContactField(index, "platform", e.target.value)}
+                      className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      Display Value
+                    </label>
+                    <input
+                      type="text"
+                      value={contact.value || ""}
+                      onChange={(e) => updateContactField(index, "value", e.target.value)}
+                      className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      URL (Link)
+                    </label>
+                    <input
+                      type="text"
+                      value={contact.url || ""}
+                      onChange={(e) => updateContactField(index, "url", e.target.value)}
+                      className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      Icon Type
+                    </label>
+                    <select
+                      value={contact.iconType || "Mail"}
+                      onChange={(e) => updateContactField(index, "iconType", e.target.value)}
+                      className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+                    >
+                      <option value="Mail">Email / Mail</option>
+                      <option value="Linkedin">LinkedIn</option>
+                      <option value="Github">GitHub</option>
+                      <option value="Globe">Website (Globe)</option>
+                      <option value="Rocket">Project (Rocket)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Dock Icons Section */}
+        <section className="space-y-6">
+          <h3 className="text-xl font-semibold text-white border-b border-white/10 pb-2">
+            Dock Navigation Labels
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(formData.dockIcons || []).map((icon: any, index: number) => (
+              <div
+                key={`dock-${index}`}
+                className="p-4 rounded-xl border border-white/5 bg-white/[0.02]"
+              >
+                <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+                  {icon.id} Icon Label
+                </label>
+                <input
+                  type="text"
+                  value={icon.label || ""}
+                  onChange={(e) => updateDockIconField(index, "label", e.target.value)}
+                  className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+                />
+              </div>
+            ))}
           </div>
         </section>
 
@@ -1027,12 +1299,11 @@ export function AdminDashboard({
                   <div className="mt-4 p-4 border border-blue-500/30 bg-blue-500/5 rounded-xl flex items-center gap-4">
                     <div className="flex-1">
                       <label className="block text-xs font-medium text-blue-300 mb-2">
-                        Upload Custom Icon (PNG, JPG, SVG - max
-                        10 MB)
+                        Upload Custom Icon (PNG, JPG, SVG, GIF, JSON/Lottie - max 10 MB)
                       </label>
                       <input
                         type="file"
-                        accept="image/png, image/jpeg, image/svg+xml"
+                        accept="image/png, image/jpeg, image/svg+xml, image/gif, application/json"
                         onChange={(e) =>
                           handleFileUpload(e, index)
                         }
