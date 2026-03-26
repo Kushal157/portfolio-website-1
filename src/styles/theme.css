@@ -26,6 +26,33 @@
   --font-weight-normal: 400;
   --ring: #3B82F6;
   --radius: 0.75rem;
+
+  /* ── Aurora / Cosmos Milky Way palette tokens ── */
+  --aurora-bg-from:        #020617; /* deep indigo-black */
+  --aurora-bg-to:          #1e1b4b; /* deep cosmic purple */
+  --aurora-heading:        #f3e8ff; /* soft lavender-white */
+  --aurora-subheading:     #d8b4fe; /* bright lavender    */
+  --aurora-body:           #e9d5ff; /* pale purple-white   */
+  --aurora-muted:          #c084fc; /* muted lavender      */
+  --aurora-primary:        #8b5cf6; /* vibrant violet      */
+  --aurora-primary-hover:  #7c3aed; /* deeper violet       */
+  --aurora-primary-fg:     #FFFFFF;
+  --aurora-ghost-bg:       rgba(139,92,246,0.12);
+  --aurora-ghost-hover:    rgba(139,92,246,0.20);
+  --aurora-ghost-border:   rgba(167,139,250,0.35);
+  --aurora-ghost-fg:       #f3e8ff;
+  --aurora-badge-bg:       rgba(139,92,246,0.18);
+  --aurora-badge-border:   rgba(167,139,250,0.40);
+  --aurora-badge-fg:       #d8b4fe;
+  --aurora-card-bg:        rgba(30,27,75,0.65);
+  --aurora-card-border:    rgba(167,139,250,0.25);
+  --aurora-accent:         #a78bfa; /* lavender-400       */
+  --aurora-accent2:        #8b5cf6; /* violet-500         */
+  --aurora-sky:            #38bdf8; /* contrasting blue star glow */
+  /* Gradient text stops (Cosmic Nebula) */
+  --aurora-grad-a:         #6366f1; /* indigo-500 */
+  --aurora-grad-b:         #8b5cf6; /* violet-500 */
+  --aurora-grad-c:         #d946ef; /* fuchsia-500 */
 }
 
 .dark {
@@ -202,5 +229,116 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* ─────────────────────────────────────────────
+     Aurora mode — triggered by data-luxe="aurora"
+     on the root wrapper in App.tsx
+     ───────────────────────────────────────────── */
+
+  /* Gradient text utility */
+  .aurora-gradient-text {
+    background: linear-gradient(
+      135deg,
+      var(--aurora-grad-a) 0%,
+      var(--aurora-grad-b) 50%,
+      var(--aurora-grad-c) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Sky-blue accent gradient (for highlights / badges) */
+  .aurora-sky-gradient-text {
+    background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 60%, #7DD3FC 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  [data-luxe="aurora"] {
+    /* headings / name */
+    --luxe-heading: var(--aurora-heading);
+    --luxe-subheading: var(--aurora-subheading);
+    --luxe-body: var(--aurora-body);
+    --luxe-muted: var(--aurora-muted);
+
+    /* primary CTA button */
+    --luxe-btn-primary-bg: var(--aurora-primary);
+    --luxe-btn-primary-hover: var(--aurora-primary-hover);
+    --luxe-btn-primary-fg: var(--aurora-primary-fg);
+    --luxe-btn-primary-shadow: rgba(234,88,12,0.35);
+
+    /* ghost / outline button */
+    --luxe-btn-ghost-bg: var(--aurora-ghost-bg);
+    --luxe-btn-ghost-hover: var(--aurora-ghost-hover);
+    --luxe-btn-ghost-border: var(--aurora-ghost-border);
+    --luxe-btn-ghost-fg: var(--aurora-ghost-fg);
+
+    /* tech-stack / skill badges */
+    --luxe-badge-bg: var(--aurora-badge-bg);
+    --luxe-badge-border: var(--aurora-badge-border);
+    --luxe-badge-fg: var(--aurora-badge-fg);
+
+    /* cards */
+    --luxe-card-bg: var(--aurora-card-bg);
+    --luxe-card-border: var(--aurora-card-border);
+
+    /* accent colour for icons/links */
+    --luxe-accent: var(--aurora-accent);
+  }
+
+  /* MagneticButton aurora overrides */
+  [data-luxe="aurora"] .luxe-btn-primary {
+    background: var(--luxe-btn-primary-bg);
+    color: var(--luxe-btn-primary-fg);
+    box-shadow: 0 8px 24px var(--luxe-btn-primary-shadow);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+  [data-luxe="aurora"] .luxe-btn-primary:hover {
+    background: var(--luxe-btn-primary-hover);
+    box-shadow: 0 12px 32px var(--luxe-btn-primary-shadow);
+  }
+
+  [data-luxe="aurora"] .luxe-btn-ghost {
+    background: var(--luxe-btn-ghost-bg);
+    color: var(--luxe-btn-ghost-fg);
+    border-color: var(--luxe-btn-ghost-border);
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+  [data-luxe="aurora"] .luxe-btn-ghost:hover {
+    background: var(--luxe-btn-ghost-hover);
+  }
+
+  /* Card aurora overrides */
+  [data-luxe="aurora"] .luxe-card {
+    background: var(--luxe-card-bg);
+    border-color: var(--luxe-card-border);
+    backdrop-filter: blur(12px);
+  }
+
+  /* Badge / tech-chip aurora overrides */
+  [data-luxe="aurora"] .luxe-badge {
+    background: var(--luxe-badge-bg);
+    border-color: var(--luxe-badge-border);
+    color: var(--luxe-badge-fg);
+  }
+
+  /* Accent icon colour */
+  [data-luxe="aurora"] .luxe-accent-icon {
+    color: var(--luxe-accent);
+  }
+
+  /* Scrollbar — warm tint in aurora */
+  [data-luxe="aurora"]::-webkit-scrollbar-thumb,
+  [data-luxe="aurora"] ::-webkit-scrollbar-thumb {
+    background: rgba(234,88,12,0.25);
+  }
+  [data-luxe="aurora"]::-webkit-scrollbar-thumb:hover,
+  [data-luxe="aurora"] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(234,88,12,0.45);
   }
 }

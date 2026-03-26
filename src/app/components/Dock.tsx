@@ -71,7 +71,7 @@ function DockItem({
     [baseWidth, baseWidth * 1.15, baseWidth * magnification, baseWidth * 1.15, baseWidth]
   );
   
-  const width = useSpring(widthSync, { mass: 0.1, stiffness: 150, damping: 12 });
+  const width = useSpring(widthSync, { mass: 0.1, stiffness: 200, damping: 20 });
 
   return (
     <div className="flex items-center">
@@ -87,12 +87,12 @@ function DockItem({
         <motion.div 
           className="flex flex-col items-center relative transition-transform duration-300 group-hover:-translate-y-4"
           style={{
-            filter: 'drop-shadow(0 0 0px rgba(59, 130, 246, 0))',
+            filter: 'brightness(1.2) drop-shadow(0 2px 6px rgba(0,0,0,0.5))',
           }}
           animate={{
             filter: isHovered 
-              ? `drop-shadow(0 0 ${isMobile ? '6px' : '15px'} rgba(59, 130, 246, 0.5))`
-              : 'drop-shadow(0 0 0 rgba(59, 130, 246, 0))',
+              ? `brightness(1.3) drop-shadow(0 0 ${isMobile ? '6px' : '15px'} rgba(59, 130, 246, 0.6))`
+              : 'brightness(1.2) drop-shadow(0 2px 6px rgba(0,0,0,0.5))',
           }}
         >
           {icon}
@@ -134,8 +134,8 @@ export function Dock({ items }: DockProps) {
       <div className="absolute inset-x-2 inset-y-0 -z-10 bg-blue-500/10 blur-3xl rounded-full" />
 
       <motion.div
-        onMouseMove={(e) => mouseX.set(e.pageX)}
-        onMouseLeave={() => mouseX.set(Infinity)}
+        onMouseMove={(e) => mouseX.set(e.clientX)}
+        onMouseLeave={() => { mouseX.set(Infinity); }}
         className="flex items-center gap-0 px-1.5 md:px-3 py-1.5 md:py-3 rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)] relative"
         style={{
           background: 'rgba(255, 255, 255, 0.05)',

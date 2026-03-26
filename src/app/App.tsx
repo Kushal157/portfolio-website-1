@@ -62,9 +62,9 @@ export default function App() {
     const hour = new Date().getHours();
     return hour >= 15 ? 'midnight' : 'aurora';
   });
+  const isAurora = luxeMode === 'aurora';
   const [showSwordSlash, setShowSwordSlash] = useState(false);
-  const [showIntro, setShowIntro] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const [siteData, setSiteData] = useState({
@@ -171,14 +171,7 @@ export default function App() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center text-white">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-gray-400">Loading experience...</p>
-      </div>
-    );
-  }
+  // isLoading kept for potential future use but no blocking UI gate
 
   const preloader = (
     <div style={{ display: 'none' }} aria-hidden="true">
@@ -197,20 +190,11 @@ export default function App() {
         {preloader}
         <SwordSlash onComplete={() => {
           setShowSwordSlash(false);
-          setShowIntro(true);
         }} />
       </>
     );
   }
 
-  if (showIntro) {
-    return (
-      <>
-        {preloader}
-        <Intro3D onComplete={() => setShowIntro(false)} />
-      </>
-    );
-  }
 
   const iconComponents: Record<string, React.ReactNode> = {
     LinkedInOcto: <LinkedInOcto />,
@@ -246,7 +230,11 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0F172A] overflow-x-hidden">
+    <div
+      className="min-h-screen bg-[#0F172A] overflow-x-hidden"
+      data-luxe={luxeMode}
+      style={{ transition: 'background-color 1.5s ease-in-out' }}
+    >
 
       {/* Grain Texture */}
       <GrainOverlay />
@@ -272,7 +260,7 @@ export default function App() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.8, delay: 0.4 }}
-                      className="text-6xl md:text-8xl lg:text-9xl font-bold text-slate-50 mb-6 tracking-tight leading-none"
+                      className={`text-6xl md:text-8xl lg:text-9xl font-bold mb-6 tracking-tight leading-none ${isAurora ? 'aurora-gradient-text' : 'text-slate-50'}`}
                     >
                       {siteData.hero.name}
                     </motion.h1>
@@ -281,7 +269,8 @@ export default function App() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.8, delay: 0.6 }}
-                      className="text-2xl md:text-4xl lg:text-5xl text-slate-300 mb-8 font-light"
+                      className="text-2xl md:text-4xl lg:text-5xl mb-8 font-light"
+                      style={{ color: isAurora ? 'var(--aurora-subheading)' : undefined, transition: 'color 1.5s ease-in-out' }}
                     >
                       {siteData.hero.subtitle}
                     </motion.h2>
@@ -290,7 +279,8 @@ export default function App() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.8, delay: 0.8 }}
-                      className="text-lg md:text-xl text-slate-300 max-w-2xl mb-12 leading-relaxed"
+                      className="text-lg md:text-xl max-w-2xl mb-12 leading-relaxed"
+                      style={{ color: isAurora ? 'var(--aurora-body)' : '#CBD5E1', transition: 'color 1.5s ease-in-out' }}
                     >
                       {siteData.hero.description}
                     </motion.p>
@@ -355,7 +345,7 @@ export default function App() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.6, delay: feature.delay }}
-                        className="group relative p-8 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-500"
+                        className={`group relative p-8 rounded-2xl border luxe-card transition-all duration-500 ${isAurora ? '' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10'}`}
                       >
                         <div className="text-blue-400 mb-6 group-hover:scale-110 transition-transform duration-500">
                           {feature.icon}
@@ -387,7 +377,9 @@ export default function App() {
                         <h2 className="text-4xl md:text-6xl font-bold text-slate-50 mb-6">
                           {siteData.cta?.heading || "Let's Create Something"}
                           <br />
-                          <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                          <span
+                            className={isAurora ? 'aurora-gradient-text' : 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'}
+                          >
                             {siteData.cta?.highlight || 'Extraordinary'}
                           </span>
                         </h2>
@@ -417,10 +409,15 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8 }}
                 >
-                  <h2 className="text-5xl md:text-7xl font-bold text-slate-50 mb-8">About Me</h2>
+                  <h2
+                    className={`text-5xl md:text-7xl font-bold mb-8 ${isAurora ? 'aurora-gradient-text' : 'text-slate-50'}`}
+                  >About Me</h2>
                   
                   <div className="grid md:grid-cols-2 gap-12 mb-16">
-                    <div className="space-y-6 text-slate-300 text-lg leading-relaxed font-light">
+                    <div
+                      className="space-y-6 text-lg leading-relaxed font-light"
+                      style={{ color: isAurora ? 'var(--aurora-body)' : '#CBD5E1', transition: 'color 1.5s ease-in-out' }}
+                    >
                       <p>{siteData.about?.paragraph1 || "I'm a passionate creative developer dedicated to crafting exceptional digital experiences."}</p>
                       <p>{siteData.about?.paragraph2 || 'With years of experience in web development and design, I specialize in creating immersive, user-centric interfaces.'}</p>
                       <p>{siteData.about?.paragraph3 || 'My approach combines technical expertise with creative vision, ensuring every project exceeds expectations.'}</p>
@@ -438,8 +435,8 @@ export default function App() {
                           ].map((item) => (
                             <div key={item.skill}>
                               <div className="flex justify-between text-sm mb-2">
-                                <span className="text-slate-400 font-medium">{item.skill}</span>
-                                <span className="text-blue-400 font-bold">{item.level}%</span>
+                                <span className="font-medium" style={{ color: isAurora ? 'var(--aurora-muted)' : '#94A3B8', transition: 'color 1.5s ease-in-out' }}>{item.skill}</span>
+                                <span className="font-bold luxe-accent-icon" style={{ color: isAurora ? 'var(--aurora-primary)' : '#60A5FA', transition: 'color 1.5s ease-in-out' }}>{item.level}%</span>
                               </div>
                               <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                                 <motion.div
@@ -447,7 +444,8 @@ export default function App() {
                                   whileInView={{ width: `${item.level}%` }}
                                   viewport={{ once: true }}
                                   transition={{ duration: 1.5, delay: 0.2, ease: "circOut" }}
-                                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                                  className={`h-full ${isAurora ? 'bg-gradient-to-r from-[#8b5cf6] to-[#d946ef]' : 'bg-gradient-to-r from-blue-500 to-purple-500'}`}
+                                  style={{ transition: 'background 1.5s ease-in-out' }}
                                 />
                               </div>
                             </div>
@@ -467,7 +465,7 @@ export default function App() {
                           whileInView={{ opacity: 1, scale: 1 }}
                           viewport={{ once: true }}
                           whileHover={{ scale: 1.1, y: -5 }}
-                          className="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-white backdrop-blur-sm hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer"
+                          className="luxe-badge px-6 py-3 bg-white/5 border border-white/10 rounded-full text-white backdrop-blur-sm hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer"
                         >
                           {skill}
                         </motion.span>
