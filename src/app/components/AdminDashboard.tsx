@@ -182,15 +182,20 @@ export function AdminDashboard({
         dataToSave.hero = rest;
       }
 
-      // Strip project image base64 data - only keep imageStoragePath
+      // Strip project image base64 data - only keep imageStoragePath and clean up tech stack
       if (Array.isArray(dataToSave.projects)) {
         dataToSave.projects = dataToSave.projects.map(
           (p: any) => {
+            // Clean up tech stack array (trim and remove empty values)
+            const tech = Array.isArray(p.tech)
+              ? p.tech.map((t: string) => t.trim()).filter(Boolean)
+              : p.tech;
+
             if (p.imageStoragePath) {
               const { imageUrl, ...rest } = p;
-              return rest;
+              return { ...rest, tech };
             }
-            return p;
+            return { ...p, tech };
           },
         );
       }
@@ -1122,10 +1127,7 @@ export function AdminDashboard({
                       updateProject(
                         index,
                         "tech",
-                        e.target.value
-                          .split(",")
-                          .map((t: string) => t.trim())
-                          .filter(Boolean),
+                        e.target.value.split(","),
                       )
                     }
                     className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
@@ -1174,157 +1176,193 @@ export function AdminDashboard({
             <h3 className="text-xl font-semibold text-white">
               Dock Icons ({(formData.dockIcons || []).length})
             </h3>
+            {formData.allowIconEdit && (
+              <button
+                onClick={addDockIcon}
+                className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Add Icon
+              </button>
+            )}
+          </div>
+
+          {/* Toggle Switch */}
+          <div className="flex items-center justify-between p-4 rounded-xl border border-white/10 bg-white/[0.02]">
+            <div>
+              <h4 className="text-sm font-medium text-white">Enable Custom Dock Icons</h4>
+              <p className="text-xs text-gray-400 mt-1">
+                {formData.allowIconEdit
+                  ? "Customizing dock icons. Admin updates will be displayed in the dock."
+                  : "Loading default animated JSON icons from folder. Icon editing is disabled."}
+              </p>
+            </div>
             <button
-              onClick={addDockIcon}
-              className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1 cursor-pointer"
+              type="button"
+              onClick={() => setFormData({ ...formData, allowIconEdit: !formData.allowIconEdit })}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                formData.allowIconEdit ? 'bg-blue-600' : 'bg-gray-700'
+              }`}
             >
-              <Plus className="w-4 h-4" /> Add Icon
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  formData.allowIconEdit ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
             </button>
           </div>
 
-          <div className="space-y-4">
-            {(Array.isArray(formData.dockIcons)
-              ? formData.dockIcons
-              : []
-            ).map((icon: any, index: number) => (
-              <div
-                key={icon.id || `icon-${index}`}
-                className="p-4 rounded-xl border border-white/5 bg-white/[0.02]"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
-                        Label
-                      </label>
-                      <input
-                        type="text"
-                        value={icon.label || ""}
-                        onChange={(e) =>
-                          updateDockIcon(
-                            index,
-                            "label",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
-                        Icon Type
-                      </label>
-                      <select
-                        value={icon.type || "ProjectsOcto"}
-                        onChange={(e) =>
-                          updateDockIcon(
-                            index,
-                            "type",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500 appearance-none"
-                      >
-                        <option value="LinkedInOcto">
-                          LinkedIn
-                        </option>
-                        <option value="GitHubOcto">
-                          GitHub
-                        </option>
-                        <option value="ProjectsOcto">
-                          Projects
-                        </option>
-                        <option value="AboutOcto">About</option>
-                        <option value="ContactOcto">
-                          Contact
-                        </option>
-                        <option value="CustomImage">
-                          Custom Image
-                        </option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
-                        URL (External)
-                      </label>
-                      <input
-                        type="text"
-                        value={icon.url || ""}
-                        onChange={(e) =>
-                          updateDockIcon(
-                            index,
-                            "url",
-                            e.target.value,
-                          )
-                        }
-                        placeholder="https://..."
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
-                        Action (Internal)
-                      </label>
-                      <select
-                        value={icon.action || ""}
-                        onChange={(e) =>
-                          updateDockIcon(
-                            index,
-                            "action",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500 appearance-none"
-                      >
-                        <option value="">None</option>
-                        <option value="home">Home</option>
-                        <option value="projects">
-                          Projects
-                        </option>
-                        <option value="about">About</option>
-                        <option value="contact">Contact</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => removeDockIcon(index)}
-                    className="text-red-500/70 hover:text-red-500 p-2 cursor-pointer"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {icon.type === "CustomImage" && (
-                  <div className="mt-4 p-4 border border-blue-500/30 bg-blue-500/5 rounded-xl flex items-center gap-4">
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-blue-300 mb-2">
-                        Upload Custom Icon (PNG, JPG, SVG, GIF, JSON/Lottie - max 10 MB)
-                      </label>
-                      <input
-                        type="file"
-                        accept="image/png, image/jpeg, image/svg+xml, image/gif, application/json"
-                        onChange={(e) =>
-                          handleFileUpload(e, index)
-                        }
-                        className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 transition-colors"
-                      />
-                    </div>
-                    {(icon.storagePath || icon.customIconData) && (
-                      <div className="w-12 h-12 rounded-xl bg-black/50 border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        <img
-                          src={icon.storagePath || icon.customIconData}
-                          alt="Preview"
-                          className="w-full h-full object-contain"
+          {formData.allowIconEdit ? (
+            <div className="space-y-4">
+              {(Array.isArray(formData.dockIcons)
+                ? formData.dockIcons
+                : []
+              ).map((icon: any, index: number) => (
+                <div
+                  key={icon.id || `icon-${index}`}
+                  className="p-4 rounded-xl border border-white/5 bg-white/[0.02]"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">
+                          Label
+                        </label>
+                        <input
+                          type="text"
+                          value={icon.label || ""}
+                          onChange={(e) =>
+                            updateDockIcon(
+                              index,
+                              "label",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
                         />
                       </div>
-                    )}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">
+                          Icon Type
+                        </label>
+                        <select
+                          value={icon.type || "ProjectsOcto"}
+                          onChange={(e) =>
+                            updateDockIcon(
+                              index,
+                              "type",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500 appearance-none"
+                        >
+                          <option value="LinkedInOcto">
+                            LinkedIn
+                          </option>
+                          <option value="GitHubOcto">
+                            GitHub
+                          </option>
+                          <option value="ProjectsOcto">
+                            Projects
+                          </option>
+                          <option value="AboutOcto">About</option>
+                          <option value="ContactOcto">
+                            Contact
+                          </option>
+                          <option value="CustomImage">
+                            Custom Image
+                          </option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">
+                          URL (External)
+                        </label>
+                        <input
+                          type="text"
+                          value={icon.url || ""}
+                          onChange={(e) =>
+                            updateDockIcon(
+                              index,
+                              "url",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="https://..."
+                          className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">
+                          Action (Internal)
+                        </label>
+                        <select
+                          value={icon.action || ""}
+                          onChange={(e) =>
+                            updateDockIcon(
+                              index,
+                              "action",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500 appearance-none"
+                        >
+                          <option value="">None</option>
+                          <option value="home">Home</option>
+                          <option value="projects">
+                            Projects
+                          </option>
+                          <option value="about">About</option>
+                          <option value="contact">Contact</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => removeDockIcon(index)}
+                      className="text-red-500/70 hover:text-red-500 p-2 cursor-pointer"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+
+                  {icon.type === "CustomImage" && (
+                    <div className="mt-4 p-4 border border-blue-500/30 bg-blue-500/5 rounded-xl flex items-center gap-4">
+                      <div className="flex-1">
+                        <label className="block text-xs font-medium text-blue-300 mb-2">
+                          Upload Custom Icon (PNG, JPG, SVG, GIF, JSON/Lottie - max 10 MB)
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/svg+xml, image/gif, application/json"
+                          onChange={(e) =>
+                            handleFileUpload(e, index)
+                          }
+                          className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 transition-colors"
+                        />
+                      </div>
+                      {(icon.storagePath || icon.customIconData) && (
+                        <div className="w-12 h-12 rounded-xl bg-black/50 border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          <img
+                            src={icon.storagePath || icon.customIconData}
+                            alt="Preview"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-6 text-center rounded-xl border border-dashed border-white/10 bg-white/[0.01]">
+              <p className="text-sm text-gray-400">
+                Dock icon custom editing is currently disabled. Toggle the option above to edit or upload custom icons.
+              </p>
+            </div>
+          )}
         </section>
+
       </div>
 
       <style>{`

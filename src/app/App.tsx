@@ -11,9 +11,25 @@ import { MagneticButton } from './components/MagneticButton';
 import { LinkedInOcto, GitHubOcto, ProjectsOcto, AboutOcto, ContactOcto } from './components/DockIcons';
 import { AdminDashboard } from './components/AdminDashboard';
 import { WaterFrame } from './components/WaterFrame';
-import { Code, Sparkles, Rocket, ArrowRight, Mail, Linkedin, Github, Eye, X as XIcon, ExternalLink, Globe, ShieldCheck, Sun, Moon } from 'lucide-react';
+import { Code, Sparkles, Rocket, ArrowRight, Mail, Linkedin, Github, Eye, X as XIcon, ExternalLink, Globe, ShieldCheck, Sun, Moon, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
+
+// Import local JSON icons
+import emailLottie from '../../icons/email icon.json';
+import folderLottie from '../../icons/folder icon.json';
+import githubLottie from '../../icons/github icon.json';
+import linkedinLottie from '../../icons/linkedin icon.json';
+import profileLottie from '../../icons/profile icon.json';
+
+const localLottieMap: Record<string, any> = {
+  linkedin: linkedinLottie,
+  github: githubLottie,
+  projects: folderLottie,
+  about: profileLottie,
+  contact: emailLottie,
+};
+
 
 const SERVER_URL = `https://${projectId}.supabase.co/functions/v1/make-server-a70c1202`;
 
@@ -68,6 +84,7 @@ export default function App() {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const [siteData, setSiteData] = useState({
+    allowIconEdit: false,
     hero: {
       welcome: 'Welcome to my Portfolio',
       name: 'KUSHAL N',
@@ -213,11 +230,14 @@ export default function App() {
   const dockItems = [
     ...(Array.isArray(siteData.dockIcons) ? siteData.dockIcons : []).map((icon: any) => ({
       id: icon?.id || Math.random().toString(),
-      icon: icon?.type === 'CustomImage' && (icon?.customIconData || icon?.storagePath || icon?.lottieData)
-        ? (icon?.isLottie || icon?.lottieData)
-          ? <LottieDockIcon signedUrl={icon.isLottie ? icon.customIconData : undefined} localData={icon.lottieData} />
-          : <div className="w-10 h-10 flex items-center justify-center"><img src={icon.customIconData || icon.storagePath} alt={icon.label || 'Custom'} className="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" /></div>
-        : (icon?.type && iconComponents[icon.type]) ? iconComponents[icon.type] : <ProjectsOcto />,
+      icon: !siteData.allowIconEdit && localLottieMap[icon?.id]
+        ? <LottieDockIcon localData={localLottieMap[icon.id]} />
+        : icon?.type === 'CustomImage' && (icon?.customIconData || icon?.storagePath || icon?.lottieData)
+          ? (icon?.isLottie || icon?.lottieData)
+            ? <LottieDockIcon signedUrl={icon.isLottie ? icon.customIconData : undefined} localData={icon.lottieData} />
+            : <div className="w-10 h-10 flex items-center justify-center"><img src={icon.customIconData || icon.storagePath} alt={icon.label || 'Custom'} className="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" /></div>
+          : (icon?.type && iconComponents[icon.type]) ? iconComponents[icon.type] : <ProjectsOcto />,
+
       label: icon?.label || '',
       onClick: () => {
         if (icon?.url) {
