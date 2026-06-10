@@ -11,8 +11,8 @@ interface DockProps {
 }
 
 const DOCK_ITEM_WIDTH = 56;
-const DOCK_MAGNIFICATION = 1.5;
-const DOCK_DISTANCE = 150;
+const DOCK_MAGNIFICATION = 1.45;
+const DOCK_DISTANCE = 140;
 
 // Custom hook for window size
 function useWindowSize() {
@@ -41,17 +41,21 @@ function DockItem({
   label, 
   onClick,
   mouseX,
-  index,
   isLast,
-  isMobile
+  isMobile,
+  baseWidth,
+  magnification,
+  activeDistance
 }: { 
   icon: React.ReactNode; 
   label: string; 
   onClick?: () => void;
   mouseX: MotionValue<number>;
-  index: number;
   isLast: boolean;
   isMobile: boolean;
+  baseWidth: number;
+  magnification: number;
+  activeDistance: number;
 }) {
   const ref = useRef<HTMLButtonElement>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -60,18 +64,15 @@ function DockItem({
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
     return val - bounds.x - bounds.width / 2;
   });
-
-  const baseWidth = isMobile ? 36 : DOCK_ITEM_WIDTH;
-  const magnification = isMobile ? 1.25 : DOCK_MAGNIFICATION;
-  const activeDistance = isMobile ? 70 : DOCK_DISTANCE;
   
   const widthSync = useTransform(
     distance, 
     [-activeDistance, -activeDistance / 2, 0, activeDistance / 2, activeDistance], 
-    [baseWidth, baseWidth * 1.15, baseWidth * magnification, baseWidth * 1.15, baseWidth]
+    [baseWidth, baseWidth * 1.12, baseWidth * magnification, baseWidth * 1.12, baseWidth]
   );
   
-  const width = useSpring(widthSync, { mass: 0.1, stiffness: 200, damping: 20 });
+  const width = useSpring(widthSync, { mass: 0.1, stiffness: 220, damping: 21 });
+  const scale = useTransform(width, (w) => w / baseWidth);
 
   return (
     <div className="flex items-center">
@@ -81,24 +82,25 @@ function DockItem({
         onClick={onClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="aspect-square relative flex items-center justify-center rounded-xl transition-all duration-300 group hover:z-50"
+        className="aspect-square relative flex items-center justify-center rounded-2xl transition-all duration-300 group hover:z-50"
         whileTap={{ scale: 0.9 }}
       >
         <motion.div 
-          className="flex flex-col items-center relative transition-transform duration-300 group-hover:-translate-y-4"
+          className="flex flex-col items-center justify-center relative transition-transform duration-300 group-hover:-translate-y-3"
           style={{
-            filter: 'brightness(1.2) drop-shadow(0 2px 6px rgba(0,0,0,0.5))',
+            filter: 'brightness(1.15) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
+            scale,
           }}
           animate={{
             filter: isHovered 
-              ? `brightness(1.3) drop-shadow(0 0 ${isMobile ? '6px' : '15px'} rgba(59, 130, 246, 0.6))`
-              : 'brightness(1.2) drop-shadow(0 2px 6px rgba(0,0,0,0.5))',
+              ? `brightness(1.3) drop-shadow(0 0 ${isMobile ? '8px' : '18px'} rgba(59, 130, 246, 0.7))`
+              : 'brightness(1.15) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
           }}
         >
           {icon}
         </motion.div>
         
-        {/* WhatsApp-style Tooltip */}
+        {/* Tooltip */}
         <motion.div
           initial={{ opacity: 0, y: 10, scale: 0.9 }}
           animate={{
@@ -107,17 +109,17 @@ function DockItem({
             scale: isHovered ? 1 : 0.9,
           }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className={`absolute ${isMobile ? '-top-10' : '-top-14'} left-1/2 -translate-x-1/2 pointer-events-none z-[100]`}
+          className={`absolute ${isMobile ? '-top-12' : '-top-16'} left-1/2 -translate-x-1/2 pointer-events-none z-[100]`}
         >
-          <div className={`relative bg-[#1E293B] text-slate-50 ${isMobile ? 'text-[8px] px-2 py-0.5' : 'text-[11px] px-3 py-1.5'} rounded-full whitespace-nowrap border border-white/10 shadow-2xl font-bold tracking-tight`}>
+          <div className={`relative bg-slate-900/95 text-slate-100 ${isMobile ? 'text-[9px] px-2.5 py-1' : 'text-[11px] px-3.5 py-1.5'} rounded-full whitespace-nowrap border border-white/10 shadow-2xl font-bold tracking-tight backdrop-blur-md`}>
             {label}
-            <div className="absolute left-1/2 -translate-x-1/2 -bottom-[3px] w-2 h-2 bg-[#1E293B] border-r border-b border-white/10 rotate-45" />
+            <div className="absolute left-1/2 -translate-x-1/2 -bottom-[3px] w-2 h-2 bg-slate-900/95 border-r border-b border-white/10 rotate-45" />
           </div>
         </motion.div>
       </motion.button>
       
-      {!isLast && (
-        <span className={`mx-0 text-white/10 select-none font-light ${isMobile ? 'text-[8px]' : 'text-base'}`}>|</span>
+      {!isMobile && !isLast && (
+        <span className="mx-1.5 text-white/10 select-none font-light text-base">|</span>
       )}
     </div>
   );
@@ -128,19 +130,27 @@ export function Dock({ items }: DockProps) {
   const { width: windowWidth } = useWindowSize();
   const isMobile = windowWidth < 640;
 
+  // Responsive dynamic base width so that icons are larger but fit perfectly on mobile screens
+  const baseWidth = isMobile 
+    ? Math.min(48, Math.max(38, (windowWidth - 48 - (items.length - 1) * 12) / items.length))
+    : DOCK_ITEM_WIDTH;
+
+  const magnification = isMobile ? 1.25 : DOCK_MAGNIFICATION;
+  const activeDistance = isMobile ? 80 : DOCK_DISTANCE;
+
   return (
-    <div className="fixed bottom-4 md:bottom-10 left-1/2 -translate-x-1/2 z-50 px-2 w-full max-w-fit">
-      {/* Subtle outer glow behind dock */}
-      <div className="absolute inset-x-2 inset-y-0 -z-10 bg-blue-500/10 blur-3xl rounded-full" />
+    <div className="fixed bottom-4 md:bottom-10 left-1/2 -translate-x-1/2 z-50 px-3 w-full max-w-fit flex justify-center">
+      {/* Subtle glassmorphism outer glow */}
+      <div className="absolute inset-x-4 inset-y-0 -z-10 bg-blue-500/5 blur-3xl rounded-full" />
 
       <motion.div
         onMouseMove={(e) => mouseX.set(e.clientX)}
         onMouseLeave={() => { mouseX.set(Infinity); }}
-        className="flex items-center gap-0 px-1.5 md:px-3 py-1.5 md:py-3 rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)] relative"
+        className="flex items-center justify-center gap-3 md:gap-4 px-3 md:px-4 py-2 md:py-3.5 rounded-[24px] border border-white/10 shadow-[0_12px_40px_0_rgba(0,0,0,0.65)] relative"
         style={{
-          background: 'rgba(255, 255, 255, 0.05)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          background: 'rgba(15, 23, 42, 0.45)', // Sleek dark slate glassmorphism
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
         }}
       >
         {items.map((item, index) => (
@@ -150,9 +160,11 @@ export function Dock({ items }: DockProps) {
             label={item.label}
             onClick={item.onClick}
             mouseX={mouseX}
-            index={index}
             isLast={index === items.length - 1}
             isMobile={isMobile}
+            baseWidth={baseWidth}
+            magnification={magnification}
+            activeDistance={activeDistance}
           />
         ))}
       </motion.div>
