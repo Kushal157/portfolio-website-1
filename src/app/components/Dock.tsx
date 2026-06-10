@@ -76,47 +76,55 @@ function DockItem({
 
   return (
     <div className="flex items-center">
-      <motion.button
-        ref={ref}
-        style={{ width }}
-        onClick={onClick}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className="aspect-square relative flex items-center justify-center rounded-2xl transition-all duration-300 group hover:z-50"
-        whileTap={{ scale: 0.9 }}
-      >
-        <motion.div 
-          className="flex flex-col items-center justify-center relative transition-transform duration-300 group-hover:-translate-y-3"
-          style={{
-            filter: 'brightness(1.15) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
-            scale,
-          }}
-          animate={{
-            filter: isHovered 
-              ? `brightness(1.3) drop-shadow(0 0 ${isMobile ? '8px' : '18px'} rgba(59, 130, 246, 0.7))`
-              : 'brightness(1.15) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
-          }}
+      <div className="flex flex-col items-center justify-center">
+        <motion.button
+          ref={ref}
+          style={{ width }}
+          onClick={onClick}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className="aspect-square relative flex items-center justify-center rounded-2xl transition-all duration-300 group hover:z-50"
+          whileTap={{ scale: 0.9 }}
         >
-          {icon}
-        </motion.div>
+          <motion.div 
+            className="flex flex-col items-center justify-center relative transition-transform duration-300 group-hover:-translate-y-3"
+            style={{
+              filter: 'brightness(1.15) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
+              scale,
+            }}
+            animate={{
+              filter: isHovered 
+                ? `brightness(1.3) drop-shadow(0 0 ${isMobile ? '8px' : '18px'} rgba(59, 130, 246, 0.7))`
+                : 'brightness(1.15) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
+            }}
+          >
+            {icon}
+          </motion.div>
+          
+          {/* Tooltip */}
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{
+              opacity: isHovered ? 1 : 0,
+              y: isHovered ? 0 : 10,
+              scale: isHovered ? 1 : 0.9,
+            }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className={`absolute ${isMobile ? '-top-12' : '-top-16'} left-1/2 -translate-x-1/2 pointer-events-none z-[100]`}
+          >
+            <div className={`relative bg-slate-900/95 text-slate-100 ${isMobile ? 'text-[9px] px-2.5 py-1' : 'text-[11px] px-3.5 py-1.5'} rounded-full whitespace-nowrap border border-white/10 shadow-2xl font-bold tracking-tight backdrop-blur-md`}>
+              {label}
+              <div className="absolute left-1/2 -translate-x-1/2 -bottom-[3px] w-2 h-2 bg-slate-900/95 border-r border-b border-white/10 rotate-45" />
+            </div>
+          </motion.div>
+        </motion.button>
         
-        {/* Tooltip */}
-        <motion.div
-          initial={{ opacity: 0, y: 10, scale: 0.9 }}
-          animate={{
-            opacity: isHovered ? 1 : 0,
-            y: isHovered ? 0 : 10,
-            scale: isHovered ? 1 : 0.9,
-          }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          className={`absolute ${isMobile ? '-top-12' : '-top-16'} left-1/2 -translate-x-1/2 pointer-events-none z-[100]`}
-        >
-          <div className={`relative bg-slate-900/95 text-slate-100 ${isMobile ? 'text-[9px] px-2.5 py-1' : 'text-[11px] px-3.5 py-1.5'} rounded-full whitespace-nowrap border border-white/10 shadow-2xl font-bold tracking-tight backdrop-blur-md`}>
+        {isMobile && (
+          <span className="text-[9px] text-slate-300/90 font-semibold mt-0.5 select-none pointer-events-none tracking-tight">
             {label}
-            <div className="absolute left-1/2 -translate-x-1/2 -bottom-[3px] w-2 h-2 bg-slate-900/95 border-r border-b border-white/10 rotate-45" />
-          </div>
-        </motion.div>
-      </motion.button>
+          </span>
+        )}
+      </div>
       
       {!isMobile && !isLast && (
         <span className="mx-1.5 text-white/10 select-none font-light text-base">|</span>
