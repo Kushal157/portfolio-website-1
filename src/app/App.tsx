@@ -327,7 +327,20 @@ export default function App() {
                     </motion.div>
                   </div>
 
-                  {(siteData.hero?.imageUrl || siteData.hero?.imageStoragePath) ? (
+                  {siteData.hero?.heroMediaType === 'video' && siteData.hero?.videoFileName ? (
+                    <div className="flex-1 w-full flex justify-center md:justify-end mt-12 md:mt-0">
+                      <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl shadow-blue-500/20">
+                        <video
+                          src={`/${siteData.hero.videoFileName}`}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
+                          loop
+                          autoPlay
+                        />
+                      </div>
+                    </div>
+                  ) : (siteData.hero?.imageUrl || siteData.hero?.imageStoragePath) ? (
                     <div className="flex-1 w-full flex justify-center md:justify-end mt-12 md:mt-0">
                       <WaterFrame imageUrl={siteData.hero.imageUrl || siteData.hero.imageStoragePath} />
                     </div>

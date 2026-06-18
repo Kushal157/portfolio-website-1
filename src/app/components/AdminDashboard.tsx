@@ -820,25 +820,75 @@ export function AdminDashboard({
           </div>
 
           <div className="mt-6 p-4 border border-blue-500/20 bg-blue-500/5 rounded-xl">
-            <label className="block text-sm font-medium text-blue-300 mb-2">
-              Hero Profile Image (PNG, JPG)
-            </label>
-            <div className="flex flex-col gap-4">
-              <input
-                type="file"
-                accept="image/png, image/jpeg, image/webp"
-                onChange={handleHeroImageUpload}
-                className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 transition-colors cursor-pointer"
-              />
-              {(formData.hero?.imageStoragePath || formData.hero?.imageUrl) && (
-                <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-white/20">
-                  <img src={formData.hero.imageStoragePath || formData.hero.imageUrl} alt="Hero Preview" className="w-full h-full object-cover" />
-                </div>
-              )}
-              {formData.hero?.imageStoragePath && (
-                <p className="text-xs text-green-400">✓ Image uploaded securely</p>
-              )}
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-blue-300">
+                Hero Profile Media
+              </label>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs ${formData.hero?.heroMediaType === 'video' ? 'text-gray-500' : 'text-blue-300 font-medium'}`}>Photo</span>
+                <button
+                  type="button"
+                  onClick={() => updateHeroField("heroMediaType", formData.hero?.heroMediaType === 'video' ? 'photo' : 'video')}
+                  className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    formData.hero?.heroMediaType === 'video' ? 'bg-blue-600' : 'bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      formData.hero?.heroMediaType === 'video' ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <span className={`text-xs ${formData.hero?.heroMediaType === 'video' ? 'text-blue-300 font-medium' : 'text-gray-500'}`}>Video</span>
+              </div>
             </div>
+
+            {formData.hero?.heroMediaType === 'video' ? (
+              <div>
+                <label className="block text-xs text-gray-400 mb-2">
+                  Video filename in /public folder (e.g. about_me.mp4)
+                </label>
+                <input
+                  type="text"
+                  value={formData.hero?.videoFileName || ""}
+                  onChange={(e) => updateHeroField("videoFileName", e.target.value)}
+                  placeholder="about_me.mp4"
+                  className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+                />
+                {formData.hero?.videoFileName && (
+                  <div className="mt-3 w-48 h-48 rounded-full overflow-hidden border-2 border-white/20">
+                    <video
+                      src={`/${formData.hero.videoFileName}`}
+                      className="w-full h-full object-cover"
+                      muted
+                      playsInline
+                      loop
+                      autoPlay
+                    />
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-2">
+                  Place your video in the <code className="text-blue-300">public/</code> folder for fast local loading
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp"
+                  onChange={handleHeroImageUpload}
+                  className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 transition-colors cursor-pointer"
+                />
+                {(formData.hero?.imageStoragePath || formData.hero?.imageUrl) && (
+                  <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-white/20">
+                    <img src={formData.hero.imageStoragePath || formData.hero.imageUrl} alt="Hero Preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                {formData.hero?.imageStoragePath && (
+                  <p className="text-xs text-green-400">✓ Image uploaded securely</p>
+                )}
+              </div>
+            )}
           </div>
         </section>
 
