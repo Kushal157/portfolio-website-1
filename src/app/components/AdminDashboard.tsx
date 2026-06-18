@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "motion/react";
 import {
   X,
@@ -15,6 +15,42 @@ import {
   projectId,
   publicAnonKey,
 } from "../../../utils/supabase/info";
+
+// A controlled text input for technologies that preserves cursor position
+function TechInput({ value, onChange }: { value: string[]; onChange: (tech: string[]) => void }) {
+  const [text, setText] = useState(() => value.join(", "));
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync from parent only when the array truly changes (not just from our own edits)
+  useEffect(() => {
+    const parentText = value.join(", ");
+    // Only update if the trimmed arrays differ (avoids cursor jump on our own onChange)
+    const currentParsed = text.split(",").map(t => t.trim()).filter(Boolean);
+    const parentParsed = value.map(t => t.trim()).filter(Boolean);
+    if (JSON.stringify(currentParsed) !== JSON.stringify(parentParsed)) {
+      setText(parentText);
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newText = e.target.value;
+    setText(newText);
+    // Only split into array for parent, don't trim individual items during typing
+    // so trailing spaces and commas are preserved for the user
+    onChange(newText.split(","));
+  };
+
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      value={text}
+      onChange={handleChange}
+      className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+      placeholder="React, Node.js, Tailwind"
+    />
+  );
+}
 
 const supabaseUrl = `https://${projectId}.supabase.co`;
 const supabase = createClient(supabaseUrl, publicAnonKey);
@@ -1117,52 +1153,95 @@ export function AdminDashboard({
                   <label className="block text-xs font-medium text-gray-500 mb-1">
                     Technologies (comma separated)
                   </label>
-                  <input
-                    type="text"
-                    value={(Array.isArray(project.tech)
-                      ? project.tech
-                      : []
-                    ).join(", ")}
-                    onChange={(e) =>
-                      updateProject(
-                        index,
-                        "tech",
-                        e.target.value.split(","),
-                      )
-                    }
-                    className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
-                    placeholder="React, Node.js, Tailwind"
+                  <TechInput
+                    value={Array.isArray(project.tech) ? project.tech : []}
+                    onChange={(newTech) => updateProject(index, "tech", newTech)}
                   />
                 </div>
 
-                {/* Project Preview Image Upload */}
+                {/* Project Preview Toggle: Photo / Video */}
                 <div className="mt-4 p-4 border border-purple-500/20 bg-purple-500/5 rounded-xl">
-                  <label className="block text-xs font-medium text-purple-300 mb-2">
-                    Project Preview Image (PNG, JPG - max 10 MB)
-                  </label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="file"
-                      accept="image/png, image/jpeg, image/webp"
-                      onChange={(e) =>
-                        handleProjectImageUpload(e, index)
-                      }
-                      className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-500 file:text-white hover:file:bg-purple-600 transition-colors flex-1"
-                    />
-                    {(project.imageStoragePath || project.imageUrl) && (
-                      <div className="w-24 h-14 rounded-lg bg-black/50 border border-white/10 overflow-hidden flex-shrink-0">
-                        <img
-                          src={project.imageStoragePath || project.imageUrl}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-xs font-medium text-purple-300">
+                      Project Preview
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs ${project.previewType === 'video' ? 'text-gray-500' : 'text-purple-300 font-medium'}`}>Photo</span>
+                      <button
+                        type="button"
+                        onClick={() => updateProject(index, "previewType", project.previewType === 'video' ? 'photo' : 'video')}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          project.previewType === 'video' ? 'bg-purple-600' : 'bg-gray-700'
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            project.previewType === 'video' ? 'translate-x-4' : 'translate-x-0'
+                          }`}
                         />
-                      </div>
-                    )}
+                      </button>
+                      <span className={`text-xs ${project.previewType === 'video' ? 'text-purple-300 font-medium' : 'text-gray-500'}`}>Video</span>
+                    </div>
                   </div>
-                  {project.imageStoragePath && (
-                    <p className="text-xs text-green-400/60 mt-2">
-                      Uploaded to storage
-                    </p>
+
+                  {project.previewType === 'video' ? (
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-2">
+                        Video filename in /public folder (e.g. my_project.mp4)
+                      </label>
+                      <input
+                        type="text"
+                        value={project.videoFileName || ""}
+                        onChange={(e) => updateProject(index, "videoFileName", e.target.value)}
+                        placeholder="project_demo.mp4"
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+                      />
+                      {project.videoFileName && (
+                        <div className="mt-3 rounded-lg overflow-hidden border border-white/10 bg-black/50">
+                          <video
+                            src={`/${project.videoFileName}`}
+                            className="w-full h-32 object-cover"
+                            muted
+                            playsInline
+                            loop
+                            autoPlay
+                          />
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 mt-2">
+                        Place your video file in the <code className="text-purple-300">public/</code> folder for fast local loading
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-2">
+                        Upload image (PNG, JPG - max 10 MB)
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/webp"
+                          onChange={(e) =>
+                            handleProjectImageUpload(e, index)
+                          }
+                          className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-500 file:text-white hover:file:bg-purple-600 transition-colors flex-1"
+                        />
+                        {(project.imageStoragePath || project.imageUrl) && (
+                          <div className="w-24 h-14 rounded-lg bg-black/50 border border-white/10 overflow-hidden flex-shrink-0">
+                            <img
+                              src={project.imageStoragePath || project.imageUrl}
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      {project.imageStoragePath && (
+                        <p className="text-xs text-green-400/60 mt-2">
+                          Uploaded to storage
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

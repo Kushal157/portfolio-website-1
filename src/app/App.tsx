@@ -543,7 +543,54 @@ export default function App() {
                       className="group relative rounded-2xl border border-white/8 bg-white/5 hover:bg-white/8 hover:border-white/15 backdrop-blur-sm transition-all duration-500 cursor-pointer overflow-hidden shadow-sm"
                     >
                       {/* Mini Preview Window */}
-                      {(project?.imageUrl || project?.imageStoragePath) && (
+                      {(project?.previewType === 'video' && project?.videoFileName) ? (
+                        <div className="relative w-full">
+                          {/* macOS-style window chrome */}
+                          <div className="bg-[#1c1c1e] border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                              <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                              <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+                            </div>
+                            <div className="flex-1 flex justify-center">
+                              <span className="text-[11px] text-gray-500 font-mono truncate max-w-[200px]">
+                                {project.title?.toLowerCase().replace(/\s+/g, '-')}.app
+                              </span>
+                            </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setPreviewIndex(index); }}
+                              className="text-gray-500 hover:text-white transition-colors p-0.5 cursor-pointer"
+                              title="Expand preview"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          {/* Preview video */}
+                          <div
+                            className="relative w-full aspect-[16/9] overflow-hidden bg-black/50"
+                            onClick={(e) => { e.stopPropagation(); setPreviewIndex(index); }}
+                          >
+                            <video
+                              src={`/${project.videoFileName}`}
+                              className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105 will-change-transform"
+                              muted
+                              playsInline
+                              loop
+                              autoPlay
+                            />
+                            {/* Hover expand overlay */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                whileHover={{ opacity: 1, scale: 1 }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/10 backdrop-blur-md rounded-full p-3"
+                              >
+                                <Eye className="w-5 h-5 text-white" />
+                              </motion.div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (project?.imageUrl || project?.imageStoragePath) ? (
                         <div className="relative w-full">
                           {/* macOS-style window chrome */}
                           <div className="bg-[#1c1c1e] border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
@@ -589,10 +636,10 @@ export default function App() {
                             </div>
                           </div>
                         </div>
-                      )}
+                      ) : null}
 
-                      {/* No image placeholder */}
-                      {!(project?.imageStoragePath || project?.imageUrl) && (
+                      {/* No image/video placeholder */}
+                      {!(project?.previewType === 'video' && project?.videoFileName) && !(project?.imageStoragePath || project?.imageUrl) && (
                         <div className="w-full">
                           <div className="bg-[#1c1c1e] border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
                             <div className="flex items-center gap-1.5">
@@ -641,7 +688,7 @@ export default function App() {
                         
                         {/* Action buttons */}
                         <div className="mt-6 flex flex-wrap items-center gap-3">
-                          {(project?.imageUrl || project?.imageStoragePath) && (
+                          {((project?.imageUrl || project?.imageStoragePath) || (project?.previewType === 'video' && project?.videoFileName)) && (
                             <button
                               onClick={(e) => { e.stopPropagation(); setPreviewIndex(index); }}
                               className="flex items-center gap-2 text-blue-400 text-sm font-medium hover:text-blue-300 transition-colors cursor-pointer"
@@ -727,9 +774,19 @@ export default function App() {
                       </button>
                     </div>
 
-                    {/* Image */}
+                    {/* Image or Video */}
                     <div className="overflow-auto max-h-[calc(90vh-48px)]">
-                      {((siteData.projects[previewIndex] as any)?.imageUrl || (siteData.projects[previewIndex] as any)?.imageStoragePath) ? (
+                      {(siteData.projects[previewIndex] as any)?.previewType === 'video' && (siteData.projects[previewIndex] as any)?.videoFileName ? (
+                        <video
+                          src={`/${(siteData.projects[previewIndex] as any).videoFileName}`}
+                          className="w-full h-auto will-change-transform"
+                          controls
+                          autoPlay
+                          muted
+                          playsInline
+                          loop
+                        />
+                      ) : ((siteData.projects[previewIndex] as any)?.imageUrl || (siteData.projects[previewIndex] as any)?.imageStoragePath) ? (
                         <img
                           src={(siteData.projects[previewIndex] as any).imageUrl || (siteData.projects[previewIndex] as any).imageStoragePath}
                           alt={(siteData.projects[previewIndex] as any)?.title}
@@ -739,7 +796,7 @@ export default function App() {
                         />
                       ) : (
                         <div className="flex items-center justify-center h-64 text-gray-500">
-                          No preview image available
+                          No preview available
                         </div>
                       )}
                     </div>
