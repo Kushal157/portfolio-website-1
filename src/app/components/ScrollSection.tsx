@@ -1,5 +1,5 @@
-import { motion, useScroll, useTransform } from 'motion/react';
-import { useRef, ReactNode } from 'react';
+import { motion } from 'motion/react';
+import React, { ReactNode } from 'react';
 
 interface ScrollSectionProps {
   children: ReactNode;
@@ -7,21 +7,13 @@ interface ScrollSectionProps {
 }
 
 export function ScrollSection({ children, className = '' }: ScrollSectionProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"]
-  });
-
-  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.8, 1, 1, 0.8]);
-  const y = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [100, 0, 0, -100]);
-
   return (
     <motion.div
-      ref={ref}
-      style={{ opacity, scale, y }}
-      className={className}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-50px' }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className={`will-change-transform ${className}`}
     >
       {children}
     </motion.div>
@@ -29,20 +21,13 @@ export function ScrollSection({ children, className = '' }: ScrollSectionProps) 
 }
 
 export function ParallaxSection({ children, className = '' }: ScrollSectionProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"]
-  });
-
-  const y = useTransform(scrollYProgress, [0, 1], [200, -200]);
-  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
-
   return (
     <motion.div
-      ref={ref}
-      style={{ y, opacity }}
-      className={className}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-50px' }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className={`will-change-transform ${className}`}
     >
       {children}
     </motion.div>
@@ -50,24 +35,13 @@ export function ParallaxSection({ children, className = '' }: ScrollSectionProps
 }
 
 export function RotateSection({ children, className = '' }: ScrollSectionProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"]
-  });
-
-  const rotateX = useTransform(scrollYProgress, [0, 0.5, 1], [45, 0, -45]);
-  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0]);
-
   return (
     <motion.div
-      ref={ref}
-      style={{ 
-        rotateX, 
-        opacity,
-        transformStyle: 'preserve-3d',
-      }}
-      className={className}
+      initial={{ opacity: 0, y: 24, scale: 0.98 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className={`will-change-transform ${className}`}
     >
       {children}
     </motion.div>

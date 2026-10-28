@@ -1,11 +1,16 @@
+import React from 'react';
+
 export function GrainOverlay() {
   return (
     <div 
-      className="fixed inset-0 pointer-events-none z-50 opacity-[0.03]"
+      className="fixed inset-0 pointer-events-none z-40 opacity-[0.025]"
       style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='3.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-        backgroundRepeat: 'repeat',
+        backgroundImage: 'radial-gradient(rgba(255,255,255,0.12) 0.5px, transparent 0.5px)',
+        backgroundSize: '4px 4px',
+        transform: 'translateZ(0)',
+        contain: 'strict',
       }}
+      aria-hidden="true"
     />
   );
 }

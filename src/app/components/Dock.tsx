@@ -1,5 +1,5 @@
 import { motion, useMotionValue, useSpring, useTransform, MotionValue } from 'motion/react';
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 
 interface DockProps {
   items: {
@@ -10,45 +10,42 @@ interface DockProps {
   }[];
 }
 
-const DOCK_ITEM_WIDTH = 56;
-const DOCK_MAGNIFICATION = 1.45;
-const DOCK_DISTANCE = 140;
+const DOCK_ITEM_WIDTH = 54;
+const DOCK_MAGNIFICATION = 1.38;
+const DOCK_DISTANCE = 130;
 
-// Custom hook for window size
-function useWindowSize() {
-  const [windowSize, setWindowSize] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
-    height: typeof window !== 'undefined' ? window.innerHeight : 800,
-  });
+function useWindowWidth() {
+  const [width, setWidth] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1200));
 
   useEffect(() => {
+    let timeoutId: number | undefined;
     function handleResize() {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
+      if (timeoutId) cancelAnimationFrame(timeoutId);
+      timeoutId = requestAnimationFrame(() => {
+        setWidth(window.innerWidth);
       });
     }
-    window.addEventListener('resize', handleResize);
-    handleResize();
+    window.addEventListener('resize', handleResize, { passive: true });
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  return windowSize;
+  return width;
 }
 
-function DockItem({ 
-  icon, 
-  label, 
+const DockItem = React.memo(function DockItem({
+  icon,
+  label,
   onClick,
   mouseX,
   isLast,
   isMobile,
   baseWidth,
   magnification,
-  activeDistance
-}: { 
-  icon: React.ReactNode; 
-  label: string; 
+  activeDistance,
+  registerMeasure,
+}: {
+  icon: React.ReactNode;
+  label: string;
   onClick?: () => void;
   mouseX: MotionValue<number>;
   isLast: boolean;
@@ -56,22 +53,39 @@ function DockItem({
   baseWidth: number;
   magnification: number;
   activeDistance: number;
+  registerMeasure: (measureFn: () => void) => () => void;
 }) {
   const ref = useRef<HTMLButtonElement>(null);
+  const centerXRef = useRef<number>(0);
   const [isHovered, setIsHovered] = useState(false);
 
+  const updateCenter = useCallback(() => {
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      centerXRef.current = rect.x + rect.width / 2;
+    }
+  }, []);
+
+  useEffect(() => {
+    updateCenter();
+    return registerMeasure(updateCenter);
+  }, [registerMeasure, updateCenter]);
+
+  // Pure arithmetic transform — avoids layout reflow on mousemove
   const distance = useTransform(mouseX, (val: number) => {
-    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
-    return val - bounds.x - bounds.width / 2;
+    if (val === Infinity || Number.isNaN(val)) return Infinity;
+    const center = centerXRef.current;
+    if (!center) return Infinity;
+    return val - center;
   });
-  
+
   const widthSync = useTransform(
-    distance, 
-    [-activeDistance, -activeDistance / 2, 0, activeDistance / 2, activeDistance], 
-    [baseWidth, baseWidth * 1.12, baseWidth * magnification, baseWidth * 1.12, baseWidth]
+    distance,
+    [-activeDistance, -activeDistance / 2, 0, activeDistance / 2, activeDistance],
+    [baseWidth, baseWidth * 1.08, baseWidth * magnification, baseWidth * 1.08, baseWidth],
   );
-  
-  const width = useSpring(widthSync, { mass: 0.1, stiffness: 220, damping: 21 });
+
+  const width = useSpring(widthSync, { mass: 0.1, stiffness: 260, damping: 24 });
   const scale = useTransform(width, (w) => w / baseWidth);
 
   return (
@@ -81,85 +95,94 @@ function DockItem({
           ref={ref}
           style={{ width }}
           onClick={onClick}
-          onMouseEnter={() => setIsHovered(true)}
+          onMouseEnter={() => {
+            updateCenter();
+            setIsHovered(true);
+          }}
           onMouseLeave={() => setIsHovered(false)}
-          className="aspect-square relative flex items-center justify-center rounded-2xl transition-all duration-300 group hover:z-50"
-          whileTap={{ scale: 0.9 }}
+          className="aspect-square relative flex items-center justify-center rounded-2xl cursor-pointer will-change-transform select-none"
+          whileTap={{ scale: 0.92 }}
         >
-          <motion.div 
-            className="flex flex-col items-center justify-center relative transition-transform duration-300 group-hover:-translate-y-3"
-            style={{
-              filter: 'brightness(1.15) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
-              scale,
-            }}
-            animate={{
-              filter: isHovered 
-                ? `brightness(1.3) drop-shadow(0 0 ${isMobile ? '8px' : '18px'} rgba(59, 130, 246, 0.7))`
-                : 'brightness(1.15) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
-            }}
+          <motion.div
+            className="flex flex-col items-center justify-center relative will-change-transform"
+            style={{ scale }}
           >
             {icon}
           </motion.div>
-          
+
           {/* Tooltip */}
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.9 }}
-            animate={{
-              opacity: isHovered ? 1 : 0,
-              y: isHovered ? 0 : 10,
-              scale: isHovered ? 1 : 0.9,
-            }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`absolute ${isMobile ? '-top-12' : '-top-16'} left-1/2 -translate-x-1/2 pointer-events-none z-[100]`}
-          >
-            <div className={`relative bg-slate-900/95 text-slate-100 ${isMobile ? 'text-[9px] px-2.5 py-1' : 'text-[11px] px-3.5 py-1.5'} rounded-full whitespace-nowrap border border-white/10 shadow-2xl font-bold tracking-tight backdrop-blur-md`}>
-              {label}
-              <div className="absolute left-1/2 -translate-x-1/2 -bottom-[3px] w-2 h-2 bg-slate-900/95 border-r border-b border-white/10 rotate-45" />
-            </div>
-          </motion.div>
+          {isHovered && (
+            <motion.div
+              initial={{ opacity: 0, y: 6, scale: 0.94 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 6, scale: 0.94 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className={`absolute ${isMobile ? '-top-10' : '-top-14'} left-1/2 -translate-x-1/2 pointer-events-none z-[100]`}
+            >
+              <div
+                className={`relative bg-slate-900/95 text-slate-100 ${
+                  isMobile ? 'text-[10px] px-2.5 py-1' : 'text-xs px-3.5 py-1.5'
+                } rounded-full whitespace-nowrap border border-white/10 shadow-xl font-medium tracking-tight backdrop-blur-md`}
+              >
+                {label}
+                <div className="absolute left-1/2 -translate-x-1/2 -bottom-[3px] w-2 h-2 bg-slate-900/95 border-r border-b border-white/10 rotate-45" />
+              </div>
+            </motion.div>
+          )}
         </motion.button>
-        
+
         {isMobile && (
-          <span className="text-[9px] text-slate-300/90 font-semibold mt-0.5 select-none pointer-events-none tracking-tight">
+          <span className="text-[9px] text-slate-400 font-medium mt-0.5 select-none pointer-events-none tracking-tight">
             {label}
           </span>
         )}
       </div>
-      
+
       {!isMobile && !isLast && (
-        <span className="mx-1.5 text-white/10 select-none font-light text-base">|</span>
+        <span className="mx-1 text-white/10 select-none font-light text-base pointer-events-none">|</span>
       )}
     </div>
   );
-}
+});
 
 export function Dock({ items }: DockProps) {
   const mouseX = useMotionValue<number>(Infinity);
-  const { width: windowWidth } = useWindowSize();
+  const windowWidth = useWindowWidth();
   const isMobile = windowWidth < 640;
 
-  // Responsive dynamic base width so that icons are larger but fit perfectly on mobile screens
-  const baseWidth = isMobile 
-    ? Math.min(48, Math.max(38, (windowWidth - 48 - (items.length - 1) * 12) / items.length))
+  const measureListenersRef = useRef<Set<() => void>>(new Set());
+  const registerMeasure = useCallback((fn: () => void) => {
+    measureListenersRef.current.add(fn);
+    return () => {
+      measureListenersRef.current.delete(fn);
+    };
+  }, []);
+
+  const remeasureAll = useCallback(() => {
+    measureListenersRef.current.forEach((fn) => fn());
+  }, []);
+
+  const baseWidth = isMobile
+    ? Math.min(46, Math.max(36, (windowWidth - 48 - (items.length - 1) * 10) / items.length))
     : DOCK_ITEM_WIDTH;
 
-  const magnification = isMobile ? 1.25 : DOCK_MAGNIFICATION;
-  const activeDistance = isMobile ? 80 : DOCK_DISTANCE;
+  const magnification = isMobile ? 1.2 : DOCK_MAGNIFICATION;
+  const activeDistance = isMobile ? 70 : DOCK_DISTANCE;
 
   return (
-    <div className="fixed bottom-4 md:bottom-10 left-1/2 -translate-x-1/2 z-50 px-3 w-full max-w-fit flex justify-center">
-      {/* Subtle glassmorphism outer glow */}
-      <div className="absolute inset-x-4 inset-y-0 -z-10 bg-blue-500/5 blur-3xl rounded-full" />
+    <div className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-50 px-3 w-full max-w-fit flex justify-center pointer-events-none">
+      {/* Background glow */}
+      <div className="absolute inset-x-4 inset-y-0 -z-10 bg-blue-500/10 blur-2xl rounded-full pointer-events-none" />
 
-      <motion.div
+      <motion.nav
+        onMouseEnter={remeasureAll}
         onMouseMove={(e) => mouseX.set(e.clientX)}
-        onMouseLeave={() => { mouseX.set(Infinity); }}
-        className="flex items-center justify-center gap-3 md:gap-4 px-3 md:px-4 py-2 md:py-3.5 rounded-[24px] border border-white/10 shadow-[0_12px_40px_0_rgba(0,0,0,0.65)] relative"
+        onMouseLeave={() => mouseX.set(Infinity)}
+        className="flex items-center justify-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-[24px] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.55)] relative pointer-events-auto backdrop-blur-xl bg-slate-950/60"
         style={{
-          background: 'rgba(15, 23, 42, 0.45)', // Sleek dark slate glassmorphism
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          contain: 'layout style',
         }}
+        aria-label="Quick Navigation Dock"
       >
         {items.map((item, index) => (
           <DockItem
@@ -173,9 +196,10 @@ export function Dock({ items }: DockProps) {
             baseWidth={baseWidth}
             magnification={magnification}
             activeDistance={activeDistance}
+            registerMeasure={registerMeasure}
           />
         ))}
-      </motion.div>
+      </motion.nav>
     </div>
   );
 }
